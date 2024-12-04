@@ -43,3 +43,11 @@ jobs:
           docker compose up -d
       - name: Import initial data
         run: ./import-onecx.sh
+      - name: Checkout to workspace repository
+        uses: actions/checkout@v4
+      - name: Set up Cypress
+        uses: cypress-io/github-action@v6
+        with:
+          build: npm run build
+          start: npm start
+          browser: chrome
