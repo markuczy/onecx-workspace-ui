@@ -14,8 +14,7 @@ jobs:
           repository: onecx/onecx-local-env
       - name: Make .sh scripts executable
         run: |
-          chmod +x ./*.sh
-          chmod +x ./imports/*.sh
+          find . -name "*.sh" -exec chmod +x {} \;
       - name: Update /etc/hosts
         run: |
           echo '127.0.0.1   local-proxy' | sudo tee -a /etc/hosts
