@@ -45,9 +45,7 @@ jobs:
         run: ./import-onecx.sh
       - name: Checkout to workspace repository
         uses: actions/checkout@v4
-      - name: Set up Cypress
-        uses: cypress-io/github-action@v6
-        with:
-          build: npm run build
-          start: npm start
-          browser: chrome
+      - name: Install npm dependencies
+        run: npm install cypress --save-dev
+      - name: Run Cypress tests
+        run: npx cypress run --spec 'e2e/**/*.cy.js'
