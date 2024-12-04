@@ -35,9 +35,9 @@ jobs:
           echo '127.0.0.1   onecx-iam-bff' | sudo tee -a /etc/hosts
           echo '127.0.0.1   onecx-tenant-svc' | sudo tee -a /etc/hosts
           echo '127.0.0.1   onecx-tenant-bff' | sudo tee -a /etc/hosts
+      - name: Check docker
+        run: docker -v
+      - name: Start Docker Compose
+        run: docker compose up -d
       - name: Import initial data
         run: ./import-onecx.sh
-      - name: Start Docker Compose
-        run: docker-compose up -d
-      - name: Log
-        run: echo "Running e2e tests"
