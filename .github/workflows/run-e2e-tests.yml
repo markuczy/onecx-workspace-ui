@@ -39,7 +39,7 @@ jobs:
         run: docker -v
       - name: Start Docker Compose
         run: |
-          sed -i '/keycloak-app/,/retries:/s/retries: 3/retries: 10/' docker-compose.yml
+          sed -i '/keycloak-app/,/retries:/s/retries: 3/retries: 10/' docker-compose.yaml
           docker compose up -d
       - name: Import initial data
         run: ./import-onecx.sh
