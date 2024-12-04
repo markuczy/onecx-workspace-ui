@@ -10,7 +10,11 @@ describe('module spec', () => {
     cy.visit('http://local-proxy/onecx-shell/admin/tenant')
 
     cy.origin('http://keycloak-app', () => {
-      cy.title().should('eq', 'Sign in to')
+      cy.title().should('eq', 'Sign in to onecx')
     })
+  })
+
+  it('should fail', () => {
+    expect(true).to.equal(false)
   })
 })
