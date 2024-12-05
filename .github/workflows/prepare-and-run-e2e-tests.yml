@@ -14,6 +14,8 @@ jobs:
     name: Prepare and run e2e tests
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout to workspace repository # TODO: Remove, its temporary here to use local workflows
+        uses: actions/checkout@v4
       - name: Prepare e2e environment
         uses: ./.github/workflows/prepare-e2e-tests-env.yml # TODO: Fix link
       - name: Run e2e tests
