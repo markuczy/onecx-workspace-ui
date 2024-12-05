@@ -10,5 +10,5 @@ jobs:
       - name: Log
         run: echo "Running my job"
   e2e-tests:
-    uses: ./.github/workflows/run-e2e-tests.yml
+    uses: ./.github/workflows/prepare-and-run-e2e-tests.yml # TODO: Remove and use the build-pr workflow
     secrets: inherit

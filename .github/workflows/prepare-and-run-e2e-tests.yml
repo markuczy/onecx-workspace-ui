@@ -1,0 +1,21 @@
+name: Prepare and run e2e tests
+
+on:
+  workflow_call:
+    # inputs:
+    #   shell:
+    #     description: 'Shell Application version'
+    #     default: 'latest'
+    #     required: false
+    #     type: string  
+
+jobs:
+  prepare-env:
+    name: Prepare environment
+    uses: ./.github/workflows/prepare-e2e-tests-env.yml # TODO: Fix link
+    secrets: inherit
+  run-tests:
+    name: Run tests
+    needs: prepare-env
+    secrets: inherit
+    uses: ./.github/workflows/run-e2e-tests.yml
