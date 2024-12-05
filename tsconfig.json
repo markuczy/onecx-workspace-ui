@@ -30,7 +30,7 @@
   "files": [],
   "include": [],
   "exclude": ["node_modules", "tmp"],
-  "references": [{ "path": "./tsconfig.app.json" }, { "path": "./tsconfig.spec.json" }],
+  "references": [{ "path": "./tsconfig.app.json" }, { "path": "./tsconfig.spec.json" }, { "path": "./tsconfig.cy.json" }],
   "angularCompilerOptions": {
     "strictInjectionParameters": true,
     "strictInputAccessModifiers": true,
