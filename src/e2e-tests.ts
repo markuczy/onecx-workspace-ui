@@ -5,6 +5,22 @@ import * as path from 'path'
 type ResourceType = 'container' | 'network'
 type StartedResource = StartedNetwork | StartedTestContainer
 
+const commonEnv: { [key: string]: string } = {
+  KC_REALM: process.env.KC_REALM!,
+  QUARKUS_OIDC_AUTH_SERVER_URL: process.env.QUARKUS_OIDC_AUTH_SERVER_URL!,
+  QUARKUS_OIDC_TOKEN_ISSUER: process.env.QUARKUS_OIDC_TOKEN_ISSUER!,
+  TKIT_SECURITY_AUTH_ENABLED: process.env.TKIT_SECURITY_AUTH_ENABLED!,
+  'TKIT_RS_CONTEXT_TENANT-ID_MOCK_ENABLED': process.env['TKIT_RS_CONTEXT_TENANT-ID_MOCK_ENABLED']!,
+  TKIT_LOG_JSON_ENABLED: process.env.TKIT_LOG_JSON_ENABLED!
+}
+
+const bffEnv: { [key: string]: string } = {}
+
+const svcEnv: { [key: string]: string } = {
+  TKIT_DATAIMPORT_ENABLED: 'true',
+  ONECX_TENANT_CACHE_ENABLED: 'false'
+}
+
 async function logStart(type: ResourceType, name?: string) {
   if (type === 'container') {
     console.log(`Starting ${name} container`)
@@ -25,9 +41,16 @@ async function logStopped(resource: StartedResource) {
   console.log(`Stopped ${resource.getName()}`)
 }
 
+// postgresdb:
+//   depends_on:
+//     traefik:
+//       condition: service_started
+//   labels:
+//     - "traefik.http.services.postgresdb.loadbalancer.server.port=5432"
+//     - "traefik.http.routers.postgresdb.rule=Host(`postgresdb`)"
 async function setupPostgres(containerName: string, network: StartedNetwork): Promise<StartedTestContainer> {
   logStart('container', containerName)
-  const startedContainer = await new GenericContainer('docker.io/library/postgres:13.4')
+  const startedContainer = await new GenericContainer(process.env.POSTGRES!)
     .withName(containerName)
     .withCommand(['-cmax_prepared_transactions=100'])
     .withEnvironment({
@@ -60,9 +83,16 @@ async function setupPostgres(containerName: string, network: StartedNetwork): Pr
   return startedContainer
 }
 
+// keycloak-app:
+//   depends_on:
+//     postgresdb:
+//       condition: service_healthy
+//   labels:
+//     - "traefik.http.services.keycloak-intranet.loadbalancer.server.port=8080"
+//     - "traefik.http.routers.keycloak-intranet.rule=Host(`keycloak-app`)"
 async function setupKeycloak(containerName: string, network: StartedNetwork): Promise<StartedTestContainer> {
   logStart('container', containerName)
-  const startedContainer = await new GenericContainer('quay.io/keycloak/keycloak:23.0.4')
+  const startedContainer = await new GenericContainer(process.env.KEYCLOAK!)
     .withName(containerName)
     .withCommand(['start-dev', '--import-realm'])
     .withEnvironment({
@@ -111,6 +141,267 @@ async function setupKeycloak(containerName: string, network: StartedNetwork): Pr
   return startedContainer
 }
 
+// onecx-theme-svc:
+//   labels:
+//     - "traefik.http.services.onecx-theme-svc.loadbalancer.server.port=8080"
+//     - "traefik.http.routers.onecx-theme-svc.rule=Host(`onecx-theme-svc`)"
+async function setupThemeSvc(
+  containerName: string,
+  network: StartedNetwork,
+  postgresContainerName: string
+): Promise<StartedTestContainer> {
+  logStart('container', containerName)
+  const container = await new GenericContainer(process.env.ONECX_THEME_SVC!)
+    .withName(containerName)
+    .withEnvironment({
+      QUARKUS_DATASOURCE_USERNAME: 'onecx_theme',
+      QUARKUS_DATASOURCE_PASSWORD: 'onecx_theme',
+      QUARKUS_DATASOURCE_JDBC_URL: `jdbc:postgresql://${postgresContainerName}:5432/onecx_theme?sslmode=disable`,
+      ...commonEnv,
+      ...svcEnv
+    })
+    .withHealthCheck({
+      test: ['CMD-SHELL', `curl --head -fsS http://localhost:8080/q/health`],
+      interval: 10_000,
+      timeout: 5_000,
+      retries: 3
+    })
+    .withNetwork(network)
+    .withExposedPorts(8080)
+    .withLogConsumer((stream) => {
+      stream.on('data', (line) => console.log(`${containerName}: `, line))
+      stream.on('err', (line) => console.error(`${containerName}: `, line))
+      stream.on('end', () => console.log(`${containerName}: Stream closed`))
+    })
+    .start()
+  logStarted(container, 8080)
+  return container
+}
+
+// onecx-permission-svc:
+//   labels:
+//     - "traefik.http.services.onecx-permission-svc.loadbalancer.server.port=8080"
+//     - "traefik.http.routers.onecx-permission-svc.rule=Host(`onecx-permission-svc`)"
+async function setupPermissionSvc(
+  containerName: string,
+  network: StartedNetwork,
+  postgresContainerName: string
+): Promise<StartedTestContainer> {
+  logStart('container', containerName)
+  const container = await new GenericContainer(process.env.ONECX_PERMISSION_SVC!)
+    .withName(containerName)
+    .withEnvironment({
+      QUARKUS_DATASOURCE_USERNAME: 'onecx_permission',
+      QUARKUS_DATASOURCE_PASSWORD: 'onecx_permission',
+      QUARKUS_DATASOURCE_JDBC_URL: `jdbc:postgresql://${postgresContainerName}:5432/onecx_permission?sslmode=disable`,
+      QUARKUS_REST_CLIENT_ONECX_TENANT_URL: 'http://onecx-tenant-svc:8080',
+      ONECX_PERMISSION_TOKEN_VERIFIED: 'false',
+      TKIT_RS_CONTEXT_TENANT_ID_ENABLED: 'false',
+      ...commonEnv,
+      ...svcEnv
+    })
+    .withHealthCheck({
+      test: ['CMD-SHELL', `curl --head -fsS http://localhost:8080/q/health`],
+      interval: 10_000,
+      timeout: 5_000,
+      retries: 3
+    })
+    .withNetwork(network)
+    .withExposedPorts(8080)
+    .withLogConsumer((stream) => {
+      stream.on('data', (line) => console.log(`${containerName}: `, line))
+      stream.on('err', (line) => console.error(`${containerName}: `, line))
+      stream.on('end', () => console.log(`${containerName}: Stream closed`))
+    })
+    .start()
+  logStarted(container, 8080)
+  return container
+}
+
+// onecx-product-store-svc:
+//     labels:
+//       - "traefik.http.services.onecx-product-store-svc.loadbalancer.server.port=8080"
+//       - "traefik.http.routers.onecx-product-store-svc.rule=Host(`onecx-product-store-svc`)"
+async function setupProductStoreSvc(
+  containerName: string,
+  network: StartedNetwork,
+  postgresContainerName: string
+): Promise<StartedTestContainer> {
+  logStart('container', containerName)
+  const container = await new GenericContainer(process.env.ONECX_PRODUCT_STORE_SVC!)
+    .withName(containerName)
+    .withEnvironment({
+      QUARKUS_DATASOURCE_USERNAME: 'onecx_product_store',
+      QUARKUS_DATASOURCE_PASSWORD: 'onecx_product_store',
+      QUARKUS_DATASOURCE_JDBC_URL: `jdbc:postgresql://${postgresContainerName}:5432/onecx_product_store?sslmode=disable`,
+      ...commonEnv,
+      ...svcEnv
+    })
+    .withHealthCheck({
+      test: ['CMD-SHELL', `curl --head -fsS http://localhost:8080/q/health`],
+      interval: 10_000,
+      timeout: 5_000,
+      retries: 3
+    })
+    .withNetwork(network)
+    .withExposedPorts(8080)
+    .withLogConsumer((stream) => {
+      stream.on('data', (line) => console.log(`${containerName}: `, line))
+      stream.on('err', (line) => console.error(`${containerName}: `, line))
+      stream.on('end', () => console.log(`${containerName}: Stream closed`))
+    })
+    .start()
+  logStarted(container, 8080)
+  return container
+}
+
+// onecx-user-profile-svc:
+//     labels:
+//       - "traefik.http.services.onecx-user-profile-svc.loadbalancer.server.port=8080"
+//       - "traefik.http.routers.onecx-user-profile-svc.rule=Host(`onecx-user-profile-store-svc`)"
+async function setupUserProfileSvc(
+  containerName: string,
+  network: StartedNetwork,
+  postgresContainerName: string
+): Promise<StartedTestContainer> {
+  logStart('container', containerName)
+  const container = await new GenericContainer(process.env.ONECX_USER_PROFILE_SVC!)
+    .withName(containerName)
+    .withEnvironment({
+      QUARKUS_DATASOURCE_USERNAME: 'onecx_user_profile',
+      QUARKUS_DATASOURCE_PASSWORD: 'onecx_user_profile',
+      QUARKUS_DATASOURCE_JDBC_URL: `jdbc:postgresql://${postgresContainerName}:5432/onecx_user_profile?sslmode=disable`,
+      ...commonEnv,
+      ...svcEnv
+    })
+    .withHealthCheck({
+      test: ['CMD-SHELL', `curl --head -fsS http://localhost:8080/q/health`],
+      interval: 10_000,
+      timeout: 5_000,
+      retries: 3
+    })
+    .withNetwork(network)
+    .withExposedPorts(8080)
+    .withLogConsumer((stream) => {
+      stream.on('data', (line) => console.log(`${containerName}: `, line))
+      stream.on('err', (line) => console.error(`${containerName}: `, line))
+      stream.on('end', () => console.log(`${containerName}: Stream closed`))
+    })
+    .start()
+  logStarted(container, 8080)
+  return container
+}
+
+// onecx-iam-kc-svc:
+//     labels:
+//       - "traefik.http.services.onecx-iam-kc-svc.loadbalancer.server.port=8080"
+//       - "traefik.http.routers.onecx-iam-kc-svc.rule=Host(`onecx-iam-kc-svc`)"
+async function setupIamKcSvc(containerName: string, network: StartedNetwork): Promise<StartedTestContainer> {
+  logStart('container', containerName)
+  const container = await new GenericContainer(process.env.ONECX_IAM_KC_SVC!)
+    .withName(containerName)
+    .withEnvironment({
+      QUARKUS_KEYCLOAK_ADMIN_CLIENT_SERVER_URL: 'http://keycloak-app:8080',
+      QUARKUS_KEYCLOAK_ADMIN_CLIENT_REALM: 'master',
+      QUARKUS_KEYCLOAK_ADMIN_CLIENT_USERNAME: 'admin',
+      QUARKUS_KEYCLOAK_ADMIN_CLIENT_PASSWORD: 'admin',
+      ...commonEnv,
+      ...svcEnv
+    })
+    .withHealthCheck({
+      test: ['CMD-SHELL', `curl --head -fsS http://localhost:8080/q/health`],
+      interval: 10_000,
+      timeout: 5_000,
+      retries: 3
+    })
+    .withNetwork(network)
+    .withExposedPorts(8080)
+    .withLogConsumer((stream) => {
+      stream.on('data', (line) => console.log(`${containerName}: `, line))
+      stream.on('err', (line) => console.error(`${containerName}: `, line))
+      stream.on('end', () => console.log(`${containerName}: Stream closed`))
+    })
+    .start()
+  logStarted(container, 8080)
+  return container
+}
+
+// onecx-tenant-svc:
+//     labels:
+//       - "traefik.http.services.onecx-tenant-svc.loadbalancer.server.port=8080"
+//       - "traefik.http.routers.onecx-tenant-svc.rule=Host(`onecx-tenant-svc`)"
+async function setupTenantSvc(
+  containerName: string,
+  network: StartedNetwork,
+  postgresContainerName: string
+): Promise<StartedTestContainer> {
+  logStart('container', containerName)
+  const container = await new GenericContainer(process.env.ONECX_TENANT_SVC!)
+    .withName(containerName)
+    .withEnvironment({
+      QUARKUS_DATASOURCE_USERNAME: 'onecx_tenant',
+      QUARKUS_DATASOURCE_PASSWORD: 'onecx_tenant',
+      QUARKUS_DATASOURCE_JDBC_URL: `jdbc:postgresql://${postgresContainerName}:5432/onecx_tenant?sslmode=disable`,
+      ...commonEnv,
+      ...svcEnv
+    })
+    .withHealthCheck({
+      test: ['CMD-SHELL', `curl --head -fsS http://localhost:8080/q/health`],
+      interval: 10_000,
+      timeout: 5_000,
+      retries: 3
+    })
+    .withNetwork(network)
+    .withExposedPorts(8080)
+    .withLogConsumer((stream) => {
+      stream.on('data', (line) => console.log(`${containerName}: `, line))
+      stream.on('err', (line) => console.error(`${containerName}: `, line))
+      stream.on('end', () => console.log(`${containerName}: Stream closed`))
+    })
+    .start()
+  logStarted(container, 8080)
+  return container
+}
+
+// onecx-workspace-svc:
+//     user: root
+//     labels:
+//       - "traefik.http.services.onecx-workspace-svc.loadbalancer.server.port=8080"
+//       - "traefik.http.routers.onecx-workspace-svc.rule=Host(`onecx-workspace-svc`)"
+async function setupWorkspaceSvc(
+  containerName: string,
+  network: StartedNetwork,
+  postgresContainerName: string
+): Promise<StartedTestContainer> {
+  logStart('container', containerName)
+  const container = await new GenericContainer(process.env.ONECX_WORKSPACE_SVC!)
+    .withName(containerName)
+    .withEnvironment({
+      QUARKUS_DATASOURCE_USERNAME: 'onecx_workspace',
+      QUARKUS_DATASOURCE_PASSWORD: 'onecx_workspace',
+      QUARKUS_DATASOURCE_JDBC_URL: `jdbc:postgresql://${postgresContainerName}:5432/onecx_workspace?sslmode=disable`,
+      TKIT_RS_CONTEXT_TENANT_ID_ENABLED: 'false',
+      ...commonEnv,
+      ...svcEnv
+    })
+    .withHealthCheck({
+      test: ['CMD-SHELL', `curl --head -fsS http://localhost:8080/q/health`],
+      interval: 10_000,
+      timeout: 5_000,
+      retries: 3
+    })
+    .withNetwork(network)
+    .withExposedPorts(8080)
+    .withLogConsumer((stream) => {
+      stream.on('data', (line) => console.log(`${containerName}: `, line))
+      stream.on('err', (line) => console.error(`${containerName}: `, line))
+      stream.on('end', () => console.log(`${containerName}: Stream closed`))
+    })
+    .start()
+  logStarted(container, 8080)
+  return container
+}
+
 async function checkDbExistence(postgres: StartedTestContainer) {
   const { output, stdout, stderr, exitCode } = await postgres.exec([
     'psql',
@@ -155,6 +446,34 @@ async function checkDbExistence(postgres: StartedTestContainer) {
   }
 }
 
+interface importConfig {
+  THEME_SVC_PORT: number
+  PERMISSION_SVC_PORT: number
+  PRODUCT_STORE_SVC_PORT: number
+  USER_PROFILE_SVC_PORT: number
+  IAM_KC_SVC_PORT: number
+  TENANT_SVC_PORT: number
+  WORKSPACE_SVC_PORT: number
+}
+
+async function importOnecx(config: importConfig) {
+  return new Promise((resolve, reject) => {
+    const variables = Object.keys(config).reduce((acc, key) => acc + `${key}=${config[key]} `, '')
+    exec(`cd e2e-tests; ${variables} . ./import-onecx.sh; cd ..`, (error, stdout, stderr) => {
+      if (error) {
+        console.error(`Error importing OneCX: ${error.message}`)
+        console.error(`Error output:\n${stdout}`)
+        return reject(error)
+      }
+      console.log(`OneCX import output:\n${stdout}`)
+      if (stderr) {
+        console.error(`OneCX import errors:\n${stderr}`)
+      }
+      resolve(null)
+    })
+  })
+}
+
 // TODO: Make variables for container names
 // TODO: Whenever something is not correctly set up, script should teardown and fail
 // TODO: Most of the containers should be taken into separate lib
@@ -167,100 +486,60 @@ async function setup() {
   const network = await new Network().start()
   logStarted(network)
 
-  // postgresdb:
-  //   depends_on:
-  //     traefik:
-  //       condition: service_started
-  //   labels:
-  //     - "traefik.http.services.postgresdb.loadbalancer.server.port=5432"
-  //     - "traefik.http.routers.postgresdb.rule=Host(`postgresdb`)"
   const postgresName = 'postgresdb'
   const postgresDbContainer = await setupPostgres(postgresName, network)
 
   await checkDbExistence(postgresDbContainer)
 
-  // keycloak-app:
-  //   depends_on:
-  //     postgresdb:
-  //       condition: service_healthy
-  //   labels:
-  //     - "traefik.http.services.keycloak-intranet.loadbalancer.server.port=8080"
-  //     - "traefik.http.routers.keycloak-intranet.rule=Host(`keycloak-app`)"
   const keycloak = 'keycloak-app'
   const keycloakContainer = await setupKeycloak(keycloak, network)
 
-  // onecx-theme-svc:
-  //   image: ${ONECX_THEME_SVC}
-  //   environment:
-  //     QUARKUS_DATASOURCE_USERNAME: onecx_theme
-  //     QUARKUS_DATASOURCE_PASSWORD: onecx_theme
-  //     QUARKUS_DATASOURCE_JDBC_URL: "jdbc:postgresql://postgresdb:5432/onecx_theme?sslmode=disable"
-  //   healthcheck:
-  //     test: curl --head -fsS http://localhost:8080/q/health
-  //     interval: 10s
-  //     timeout: 5s
-  //     retries: 3
-  //   depends_on:
-  //     postgresdb:
-  //       condition: service_healthy
-  //   labels:
-  //     - "traefik.http.services.onecx-theme-svc.loadbalancer.server.port=8080"
-  //     - "traefik.http.routers.onecx-theme-svc.rule=Host(`onecx-theme-svc`)"
-  //   env_file:
-  //     - common.env
-  //     - svc.env
-  //   networks:
-  //     - example
-  // const theme_svc = 'onecx-theme-svc'
-  // logStart('container', theme_svc)
-  // const themeSvcContainer = await new GenericContainer('ghcr.io/onecx')
-  //   .withName(keycloak)
-  //   .withCommand(['start-dev', '--import-realm'])
-  //   .withEnvironment({
-  //     KEYCLOAK_ADMIN: 'admin',
-  //     KEYCLOAK_ADMIN_PASSWORD: 'admin',
-  //     KC_DB: 'postgres',
-  //     KC_DB_POOL_INITIAL_SIZE: '1',
-  //     KC_DB_POOL_MAX_SIZE: '5',
-  //     KC_DB_POOL_MIN_SIZE: '2',
-  //     KC_DB_URL_DATABASE: 'keycloak',
-  //     KC_DB_URL_HOST: 'postgresdb',
-  //     KC_DB_USERNAME: 'keycloak',
-  //     KC_DB_PASSWORD: 'keycloak',
-  //     KC_HOSTNAME: 'keycloak-app',
-  //     KC_HOSTNAME_STRICT: 'false',
-  //     KC_HTTP_ENABLED: 'true',
-  //     KC_HTTP_PORT: '8080',
-  //     KC_HEALTH_ENABLED: 'true'
-  //   })
-  //   .withHealthCheck({
-  //     test: [
-  //       'CMD-SHELL',
-  //       `{ printf >&3 'GET /realms/onecx/.well-known/openid-configuration HTTP/1.0\\r\\nHost: localhost\\r\\n\\r\\n'; cat <&3; } 3<>/dev/tcp/localhost/8080 | head -1 | grep 200`
-  //     ],
-  //     interval: 10_000,
-  //     timeout: 5_000,
-  //     retries: 10
-  //   })
-  //   .withNetwork(network)
-  //   .withExposedPorts(8080)
-  //   .withCopyDirectoriesToContainer([
-  //     {
-  //       source: path.resolve('e2e-tests/init-data/keycloak/imports'),
-  //       target: '/opt/keycloak/data/import'
-  //     }
-  //   ])
-  //   .withStartupTimeout(100_000)
-  //   .withLogConsumer((stream) => {
-  //     stream.on('data', (line) => console.log(`${keycloak}: `, line))
-  //     stream.on('err', (line) => console.error(`${keycloak}: `, line))
-  //     stream.on('end', () => console.log(`${keycloak}: Stream closed`))
-  //   })
-  //   .start()
-  // logStarted(keycloakContainer, 8080)
+  const theme_svc = 'onecx-theme-svc'
+  const themeSvcContainer = await setupThemeSvc(theme_svc, network, postgresName)
+
+  const permission_svc = 'onecx-permission-svc'
+  const permissionSvcContainer = await setupPermissionSvc(permission_svc, network, postgresName)
+
+  const product_store_svc = 'onecx-product-store-svc'
+  const productStoreSvcContainer = await setupProductStoreSvc(product_store_svc, network, postgresName)
+
+  const user_profile_svc = 'onecx-user-profile-svc'
+  const userProfileSvcContainer = await setupUserProfileSvc(user_profile_svc, network, postgresName)
+
+  const iam_kc_svc = 'onecx-iam-kc-svc'
+  const iamKcSvcContainer = await setupIamKcSvc(iam_kc_svc, network)
+
+  const tenant_svc = 'onecx-tenant-svc'
+  const tenantSvcContainer = await setupTenantSvc(tenant_svc, network, postgresName)
+
+  const workspace_svc = 'onecx-workspace-svc'
+  const workspaceSvcContainer = await setupWorkspaceSvc(workspace_svc, network, postgresName)
+
+  await importOnecx({
+    THEME_SVC_PORT: themeSvcContainer.getMappedPort(8080),
+    PERMISSION_SVC_PORT: permissionSvcContainer.getMappedPort(8080),
+    PRODUCT_STORE_SVC_PORT: productStoreSvcContainer.getMappedPort(8080),
+    USER_PROFILE_SVC_PORT: userProfileSvcContainer.getMappedPort(8080),
+    IAM_KC_SVC_PORT: iamKcSvcContainer.getMappedPort(8080),
+    TENANT_SVC_PORT: tenantSvcContainer.getMappedPort(8080),
+    WORKSPACE_SVC_PORT: workspaceSvcContainer.getMappedPort(8080)
+  })
 
   console.log('finishing e2e tests setup')
-  return [postgresDbContainer, keycloakContainer, network]
+  return [
+    postgresDbContainer,
+    keycloakContainer,
+    ...[
+      themeSvcContainer,
+      permissionSvcContainer,
+      productStoreSvcContainer,
+      userProfileSvcContainer,
+      iamKcSvcContainer,
+      tenantSvcContainer,
+      workspaceSvcContainer
+    ],
+    network
+  ]
 }
 
 async function teardown(services: Array<StartedNetwork | StartedTestContainer>) {

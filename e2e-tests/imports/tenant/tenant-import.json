@@ -1,0 +1,25 @@
+{
+    "id": "manual-import-onecx",
+    "tenants": {
+        "onecx": {
+            "orgId": "onecx",
+            "description": "onecx tenant"
+        },
+        "test": {
+            "orgId": "onecx2",
+            "description": "onecx second tenant"
+        },
+        "test2": {
+            "orgId": "myorg",
+            "description": "myorg tenant"
+        },
+        "asd": {
+            "orgId": "myorg2",
+            "description": "onecx second tenant"
+        },
+        "wasd": {
+            "orgId": "diff",
+            "description": "onecx tenant"
+        }
+    }
+}
