@@ -1,17 +1,28 @@
 describe('module spec', () => {
+  let port: number
+  let keycloakPort: number
+  beforeEach(() => {
+    port = Cypress.env('PORT')
+    keycloakPort = Cypress.env('KEYCLOAK_PORT')
+  })
   it('passes', () => {
     cy.visit('https://example.cypress.io')
   })
 
-  // TODO: Make the url as parameter
   // TODO: Offer login functionality for products out of the box
   // TODO: Write real assertion to check for the module loading
   it('renders the page', () => {
-    cy.visit('http://local-proxy/onecx-shell/admin/tenant')
+    cy.visit(`http://localhost:${port}/onecx-shell/admin/tenant`)
 
-    cy.origin('http://keycloak-app', () => {
-      cy.title().should('eq', 'Sign in to onecx')
-    })
+    cy.url().should('include', `localhost:${keycloakPort}`)
+
+    cy.get('input[name="username"]').type('onecx')
+    cy.get('input[name="password"]').type('onecx')
+    cy.get('input[name="login"]').click()
+
+    cy.url().should('include', `localhost:${port}`)
+
+    cy.title().should('eq', 'my page hihi')
   })
 
   it('should fail', () => {

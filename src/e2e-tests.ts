@@ -106,7 +106,7 @@ async function setupKeycloak(containerName: string, network: StartedNetwork): Pr
       KC_DB_URL_HOST: 'postgresdb',
       KC_DB_USERNAME: 'keycloak',
       KC_DB_PASSWORD: 'keycloak',
-      KC_HOSTNAME: 'keycloak-app',
+      // KC_HOSTNAME: 'keycloak-app',
       KC_HOSTNAME_STRICT: 'false',
       KC_HTTP_ENABLED: 'true',
       KC_HTTP_PORT: '8080',
@@ -168,6 +168,7 @@ async function setupThemeSvc(
     })
     .withNetwork(network)
     .withExposedPorts(8080)
+    .withWaitStrategy(Wait.forHealthCheck())
     .withLogConsumer((stream) => {
       stream.on('data', (line) => console.log(`${containerName}: `, line))
       stream.on('err', (line) => console.error(`${containerName}: `, line))
@@ -208,6 +209,7 @@ async function setupPermissionSvc(
     })
     .withNetwork(network)
     .withExposedPorts(8080)
+    .withWaitStrategy(Wait.forHealthCheck())
     .withLogConsumer((stream) => {
       stream.on('data', (line) => console.log(`${containerName}: `, line))
       stream.on('err', (line) => console.error(`${containerName}: `, line))
@@ -245,6 +247,7 @@ async function setupProductStoreSvc(
     })
     .withNetwork(network)
     .withExposedPorts(8080)
+    .withWaitStrategy(Wait.forHealthCheck())
     .withLogConsumer((stream) => {
       stream.on('data', (line) => console.log(`${containerName}: `, line))
       stream.on('err', (line) => console.error(`${containerName}: `, line))
@@ -282,6 +285,7 @@ async function setupUserProfileSvc(
     })
     .withNetwork(network)
     .withExposedPorts(8080)
+    .withWaitStrategy(Wait.forHealthCheck())
     .withLogConsumer((stream) => {
       stream.on('data', (line) => console.log(`${containerName}: `, line))
       stream.on('err', (line) => console.error(`${containerName}: `, line))
@@ -316,6 +320,7 @@ async function setupIamKcSvc(containerName: string, network: StartedNetwork): Pr
     })
     .withNetwork(network)
     .withExposedPorts(8080)
+    .withWaitStrategy(Wait.forHealthCheck())
     .withLogConsumer((stream) => {
       stream.on('data', (line) => console.log(`${containerName}: `, line))
       stream.on('err', (line) => console.error(`${containerName}: `, line))
@@ -353,6 +358,7 @@ async function setupTenantSvc(
     })
     .withNetwork(network)
     .withExposedPorts(8080)
+    .withWaitStrategy(Wait.forHealthCheck())
     .withLogConsumer((stream) => {
       stream.on('data', (line) => console.log(`${containerName}: `, line))
       stream.on('err', (line) => console.error(`${containerName}: `, line))
@@ -389,6 +395,76 @@ async function setupWorkspaceSvc(
       interval: 10_000,
       timeout: 5_000,
       retries: 3
+    })
+    .withNetwork(network)
+    .withExposedPorts(8080)
+    .withWaitStrategy(Wait.forHealthCheck())
+    .withLogConsumer((stream) => {
+      stream.on('data', (line) => console.log(`${containerName}: `, line))
+      stream.on('err', (line) => console.error(`${containerName}: `, line))
+      stream.on('end', () => console.log(`${containerName}: Stream closed`))
+    })
+    .start()
+  logStarted(container, 8080)
+  return container
+}
+
+// onecx-shell-bff:
+//     labels:
+//       - "traefik.http.services.onecx-shell-bff.loadbalancer.server.port=8080"
+//       - "traefik.http.routers.onecx-shell-bff.rule=Host(`onecx-shell-bff`)"
+async function setupShellBff(containerName: string, network: StartedNetwork): Promise<StartedTestContainer> {
+  logStart('container', containerName)
+  const container = await new GenericContainer(process.env.ONECX_SHELL_BFF!)
+    .withName(containerName)
+    .withEnvironment({
+      ONECX_PERMISSIONS_PRODUCT_NAME: 'onecx-shell',
+      ...commonEnv,
+      ...bffEnv
+    })
+    .withHealthCheck({
+      test: ['CMD-SHELL', `curl --head -fsS http://localhost:8080/q/health`],
+      interval: 10_000,
+      timeout: 5_000,
+      retries: 3,
+      startPeriod: 10_000
+    })
+    .withNetwork(network)
+    .withExposedPorts(8080)
+    .withWaitStrategy(Wait.forHealthCheck())
+    .withLogConsumer((stream) => {
+      stream.on('data', (line) => console.log(`${containerName}: `, line))
+      stream.on('err', (line) => console.error(`${containerName}: `, line))
+      stream.on('end', () => console.log(`${containerName}: Stream closed`))
+    })
+    .start()
+  logStarted(container, 8080)
+  return container
+}
+
+// onecx-shell-ui:
+//     labels:
+//       - "traefik.http.services.onecx-shell-ui.loadbalancer.server.port=8080"
+//       - "traefik.http.routers.onecx-shell-ui.rule=Host(`local-proxy`)&&PathPrefix(`/onecx-shell/`)"
+async function setupShellUi(
+  containerName: string,
+  network: StartedNetwork,
+  keycloakContainer: StartedTestContainer,
+  shellBffContainer: StartedTestContainer
+): Promise<StartedTestContainer> {
+  logStart('container', containerName)
+  const container = await new GenericContainer(process.env.ONECX_SHELL_UI!)
+    .withName(containerName)
+    .withEnvironment({
+      ONECX_PERMISSIONS_ENABLED: 'true',
+      ONECX_PERMISSIONS_CACHE_ENABLED: 'false',
+      ONECX_PERMISSIONS_PRODUCT_NAME: 'onecx-shell',
+      APP_BASE_HREF: '/onecx-shell/',
+      KEYCLOAK_URL: `http://localhost:${keycloakContainer.getMappedPort(8080)}`,
+      ONECX_VAR_REMAP: 'KEYCLOAK_REALM=KC_REALM;KEYCLOAK_CLIENT_ID=CLIENT_USER_ID',
+      CLIENT_USER_ID: 'onecx-shell-ui-client',
+      BFF_URL: `http://localhost:${shellBffContainer.getMappedPort(8080)}`,
+      ...commonEnv
     })
     .withNetwork(network)
     .withExposedPorts(8080)
@@ -494,6 +570,9 @@ async function setup() {
   const keycloak = 'keycloak-app'
   const keycloakContainer = await setupKeycloak(keycloak, network)
 
+  commonEnv['QUARKUS_OIDC_AUTH_SERVER_URL'] = `http://localhost:${keycloakContainer.getMappedPort(8080)}/realms/onecx`
+  commonEnv['QUARKUS_OIDC_TOKEN_ISSUER'] = `http://localhost:${keycloakContainer.getMappedPort(8080)}/realms/onecx`
+
   const theme_svc = 'onecx-theme-svc'
   const themeSvcContainer = await setupThemeSvc(theme_svc, network, postgresName)
 
@@ -525,21 +604,56 @@ async function setup() {
     WORKSPACE_SVC_PORT: workspaceSvcContainer.getMappedPort(8080)
   })
 
+  // TODO: Start Shell
+  const shell_bff = 'onecx-shell-bff'
+  const shellBffContainer = await setupShellBff(shell_bff, network)
+
+  const shell_ui = 'onecx-shell-ui'
+  const shellUiContainer = await setupShellUi(shell_ui, network, keycloakContainer, shellBffContainer)
+  // // TODO: Start BFFs
+  // const theme_bff = 'onecx-theme-bff'
+  // const themeBffContainer = await setupThemeBff(theme_bff, network)
+
+  // const permission_svc = 'onecx-permission-svc'
+  // const permissionSvcContainer = await setupPermissionSvc(permission_svc, network, postgresName)
+
+  // const product_store_svc = 'onecx-product-store-svc'
+  // const productStoreSvcContainer = await setupProductStoreSvc(product_store_svc, network, postgresName)
+
+  // const user_profile_svc = 'onecx-user-profile-svc'
+  // const userProfileSvcContainer = await setupUserProfileSvc(user_profile_svc, network, postgresName)
+
+  // const iam_kc_svc = 'onecx-iam-kc-svc'
+  // const iamKcSvcContainer = await setupIamKcSvc(iam_kc_svc, network)
+
+  // const tenant_svc = 'onecx-tenant-svc'
+  // const tenantSvcContainer = await setupTenantSvc(tenant_svc, network, postgresName)
+
+  // const workspace_svc = 'onecx-workspace-svc'
+  // const workspaceSvcContainer = await setupWorkspaceSvc(workspace_svc, network, postgresName)
+  // TODO: Start UIs
+
   console.log('finishing e2e tests setup')
-  return [
-    postgresDbContainer,
-    keycloakContainer,
-    ...[
-      themeSvcContainer,
-      permissionSvcContainer,
-      productStoreSvcContainer,
-      userProfileSvcContainer,
-      iamKcSvcContainer,
-      tenantSvcContainer,
-      workspaceSvcContainer
+  return {
+    services: [
+      postgresDbContainer,
+      keycloakContainer,
+      ...[
+        themeSvcContainer,
+        permissionSvcContainer,
+        productStoreSvcContainer,
+        userProfileSvcContainer,
+        iamKcSvcContainer,
+        tenantSvcContainer,
+        workspaceSvcContainer
+      ],
+      ...[shellBffContainer],
+      ...[shellUiContainer],
+      network
     ],
-    network
-  ]
+    uiPort: shellUiContainer.getMappedPort(8080),
+    keycloakPort: keycloakContainer.getMappedPort(8080)
+  }
 }
 
 async function teardown(services: Array<StartedNetwork | StartedTestContainer>) {
@@ -551,34 +665,37 @@ async function teardown(services: Array<StartedNetwork | StartedTestContainer>) 
   console.log('finishing e2e tests teardown')
 }
 
-async function runCypressTests() {
+async function runCypressTests(uiPort: number, keycloakPort: number) {
   return new Promise((resolve, reject) => {
-    exec('npx cypress run --spec "cypress/e2e/**/*.cy.ts"', (error, stdout, stderr) => {
-      if (error) {
-        console.error(`Error running Cypress tests: ${error.message}`)
-        console.error(`Error tests output:\n${stdout}`)
-        return reject(error)
+    exec(
+      `npx cypress run --spec "cypress/e2e/**/*.cy.ts" --env PORT=${uiPort},KEYCLOAK_PORT=${keycloakPort}`,
+      (error, stdout, stderr) => {
+        if (error) {
+          console.error(`Error running Cypress tests: ${error.message}`)
+          console.error(`Error tests output:\n${stdout}`)
+          return reject(error)
+        }
+        console.log(`Cypress tests output:\n${stdout}`)
+        if (stderr) {
+          console.error(`Cypress tests errors:\n${stderr}`)
+        }
+        resolve(null)
       }
-      console.log(`Cypress tests output:\n${stdout}`)
-      if (stderr) {
-        console.error(`Cypress tests errors:\n${stderr}`)
-      }
-      resolve(null)
-    })
+    )
   })
 }
 
 async function runTests() {
-  const services = await setup()
+  const data = await setup()
 
   console.log('starting e2e tests')
   try {
-    // await runCypressTests()
+    await runCypressTests(data.uiPort, data.keycloakPort)
     console.log('finishing e2e tests')
   } catch (error) {
     console.error('Cypress tests failed', error)
   } finally {
-    await teardown(services)
+    await teardown(data.services)
   }
 }
 

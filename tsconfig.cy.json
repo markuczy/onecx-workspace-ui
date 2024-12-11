@@ -5,7 +5,7 @@
     "declaration": false,
     "outDir": "./dist/cy",
     "module": "commonjs",
-    "types": ["cypress"],
+    "types": ["cypress", "node"],
     "target": "ES2022",
     "useDefineForClassFields": false
   },
