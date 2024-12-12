@@ -17,8 +17,8 @@ const commonEnv: { [key: string]: string } = {
 const bffEnv: { [key: string]: string } = {}
 
 const svcEnv: { [key: string]: string } = {
-  TKIT_DATAIMPORT_ENABLED: 'true',
-  ONECX_TENANT_CACHE_ENABLED: 'false'
+  TKIT_DATAIMPORT_ENABLED: process.env.TKIT_DATAIMPORT_ENABLED!,
+  ONECX_TENANT_CACHE_ENABLED: process.env.ONECX_TENANT_CACHE_ENABLED!
 }
 
 async function logStart(type: ResourceType, name?: string) {
@@ -41,17 +41,10 @@ async function logStopped(resource: StartedResource) {
   console.log(`Stopped ${resource.getName()}`)
 }
 
-// postgresdb:
-//   depends_on:
-//     traefik:
-//       condition: service_started
-//   labels:
-//     - "traefik.http.services.postgresdb.loadbalancer.server.port=5432"
-//     - "traefik.http.routers.postgresdb.rule=Host(`postgresdb`)"
-async function setupPostgres(containerName: string, network: StartedNetwork): Promise<StartedTestContainer> {
-  logStart('container', containerName)
+async function setupPostgres(name: string, network: StartedNetwork): Promise<StartedTestContainer> {
+  logStart('container', name)
   const startedContainer = await new GenericContainer(process.env.POSTGRES!)
-    .withName(containerName)
+    .withName(name)
     .withCommand(['-cmax_prepared_transactions=100'])
     .withEnvironment({
       POSTGRES_USER: 'postgres',
@@ -65,6 +58,7 @@ async function setupPostgres(containerName: string, network: StartedNetwork): Pr
       retries: 3
     })
     .withNetwork(network)
+    .withNetworkAliases(name)
     .withExposedPorts(5432)
     .withCopyDirectoriesToContainer([
       {
@@ -74,24 +68,22 @@ async function setupPostgres(containerName: string, network: StartedNetwork): Pr
     ])
     .withWaitStrategy(Wait.forHealthCheck())
     .withLogConsumer((stream) => {
-      stream.on('data', (line) => console.log(`${containerName}: `, line))
-      stream.on('err', (line) => console.error(`${containerName}: `, line))
-      stream.on('end', () => console.log(`${containerName}: Stream closed`))
+      stream.on('data', (line) => console.log(`${name}: `, line))
+      stream.on('err', (line) => console.error(`${name}: `, line))
+      stream.on('end', () => console.log(`${name}: Stream closed`))
     })
     .start()
   logStarted(startedContainer, 5432)
   return startedContainer
 }
 
-// keycloak-app:
-//   depends_on:
-//     postgresdb:
-//       condition: service_healthy
-//   labels:
-//     - "traefik.http.services.keycloak-intranet.loadbalancer.server.port=8080"
-//     - "traefik.http.routers.keycloak-intranet.rule=Host(`keycloak-app`)"
-async function setupKeycloak(containerName: string, network: StartedNetwork): Promise<StartedTestContainer> {
+async function setupKeycloak(
+  containerName: string,
+  network: StartedNetwork,
+  postgresName: string
+): Promise<StartedTestContainer> {
   logStart('container', containerName)
+  const realm = commonEnv.KC_REALM
   const startedContainer = await new GenericContainer(process.env.KEYCLOAK!)
     .withName(containerName)
     .withCommand(['start-dev', '--import-realm'])
@@ -103,7 +95,7 @@ async function setupKeycloak(containerName: string, network: StartedNetwork): Pr
       KC_DB_POOL_MAX_SIZE: '5',
       KC_DB_POOL_MIN_SIZE: '2',
       KC_DB_URL_DATABASE: 'keycloak',
-      KC_DB_URL_HOST: 'postgresdb',
+      KC_DB_URL_HOST: postgresName,
       KC_DB_USERNAME: 'keycloak',
       KC_DB_PASSWORD: 'keycloak',
       // KC_HOSTNAME: 'keycloak-app',
@@ -115,13 +107,14 @@ async function setupKeycloak(containerName: string, network: StartedNetwork): Pr
     .withHealthCheck({
       test: [
         'CMD-SHELL',
-        `{ printf >&3 'GET /realms/onecx/.well-known/openid-configuration HTTP/1.0\\r\\nHost: localhost\\r\\n\\r\\n'; cat <&3; } 3<>/dev/tcp/localhost/8080 | head -1 | grep 200`
+        `{ printf >&3 'GET /realms/${realm}/.well-known/openid-configuration HTTP/1.0\\r\\nHost: localhost\\r\\n\\r\\n'; cat <&3; } 3<>/dev/tcp/localhost/8080 | head -1 | grep 200`
       ],
       interval: 10_000,
       timeout: 5_000,
       retries: 10
     })
     .withNetwork(network)
+    .withNetworkAliases(containerName)
     .withExposedPorts(8080)
     .withCopyDirectoriesToContainer([
       {
@@ -141,14 +134,10 @@ async function setupKeycloak(containerName: string, network: StartedNetwork): Pr
   return startedContainer
 }
 
-// onecx-theme-svc:
-//   labels:
-//     - "traefik.http.services.onecx-theme-svc.loadbalancer.server.port=8080"
-//     - "traefik.http.routers.onecx-theme-svc.rule=Host(`onecx-theme-svc`)"
 async function setupThemeSvc(
   containerName: string,
   network: StartedNetwork,
-  postgresContainerName: string
+  postgresName: string
 ): Promise<StartedTestContainer> {
   logStart('container', containerName)
   const container = await new GenericContainer(process.env.ONECX_THEME_SVC!)
@@ -156,7 +145,7 @@ async function setupThemeSvc(
     .withEnvironment({
       QUARKUS_DATASOURCE_USERNAME: 'onecx_theme',
       QUARKUS_DATASOURCE_PASSWORD: 'onecx_theme',
-      QUARKUS_DATASOURCE_JDBC_URL: `jdbc:postgresql://${postgresContainerName}:5432/onecx_theme?sslmode=disable`,
+      QUARKUS_DATASOURCE_JDBC_URL: `jdbc:postgresql://${postgresName}:5432/onecx_theme?sslmode=disable`,
       ...commonEnv,
       ...svcEnv
     })
@@ -167,6 +156,7 @@ async function setupThemeSvc(
       retries: 3
     })
     .withNetwork(network)
+    .withNetworkAliases(containerName)
     .withExposedPorts(8080)
     .withWaitStrategy(Wait.forHealthCheck())
     .withLogConsumer((stream) => {
@@ -179,14 +169,10 @@ async function setupThemeSvc(
   return container
 }
 
-// onecx-permission-svc:
-//   labels:
-//     - "traefik.http.services.onecx-permission-svc.loadbalancer.server.port=8080"
-//     - "traefik.http.routers.onecx-permission-svc.rule=Host(`onecx-permission-svc`)"
 async function setupPermissionSvc(
   containerName: string,
   network: StartedNetwork,
-  postgresContainerName: string
+  postgresName: string
 ): Promise<StartedTestContainer> {
   logStart('container', containerName)
   const container = await new GenericContainer(process.env.ONECX_PERMISSION_SVC!)
@@ -194,7 +180,7 @@ async function setupPermissionSvc(
     .withEnvironment({
       QUARKUS_DATASOURCE_USERNAME: 'onecx_permission',
       QUARKUS_DATASOURCE_PASSWORD: 'onecx_permission',
-      QUARKUS_DATASOURCE_JDBC_URL: `jdbc:postgresql://${postgresContainerName}:5432/onecx_permission?sslmode=disable`,
+      QUARKUS_DATASOURCE_JDBC_URL: `jdbc:postgresql://${postgresName}:5432/onecx_permission?sslmode=disable`,
       QUARKUS_REST_CLIENT_ONECX_TENANT_URL: 'http://onecx-tenant-svc:8080',
       ONECX_PERMISSION_TOKEN_VERIFIED: 'false',
       TKIT_RS_CONTEXT_TENANT_ID_ENABLED: 'false',
@@ -208,6 +194,7 @@ async function setupPermissionSvc(
       retries: 3
     })
     .withNetwork(network)
+    .withNetworkAliases(containerName)
     .withExposedPorts(8080)
     .withWaitStrategy(Wait.forHealthCheck())
     .withLogConsumer((stream) => {
@@ -220,14 +207,10 @@ async function setupPermissionSvc(
   return container
 }
 
-// onecx-product-store-svc:
-//     labels:
-//       - "traefik.http.services.onecx-product-store-svc.loadbalancer.server.port=8080"
-//       - "traefik.http.routers.onecx-product-store-svc.rule=Host(`onecx-product-store-svc`)"
 async function setupProductStoreSvc(
   containerName: string,
   network: StartedNetwork,
-  postgresContainerName: string
+  postgresName: string
 ): Promise<StartedTestContainer> {
   logStart('container', containerName)
   const container = await new GenericContainer(process.env.ONECX_PRODUCT_STORE_SVC!)
@@ -235,7 +218,7 @@ async function setupProductStoreSvc(
     .withEnvironment({
       QUARKUS_DATASOURCE_USERNAME: 'onecx_product_store',
       QUARKUS_DATASOURCE_PASSWORD: 'onecx_product_store',
-      QUARKUS_DATASOURCE_JDBC_URL: `jdbc:postgresql://${postgresContainerName}:5432/onecx_product_store?sslmode=disable`,
+      QUARKUS_DATASOURCE_JDBC_URL: `jdbc:postgresql://${postgresName}:5432/onecx_product_store?sslmode=disable`,
       ...commonEnv,
       ...svcEnv
     })
@@ -246,6 +229,7 @@ async function setupProductStoreSvc(
       retries: 3
     })
     .withNetwork(network)
+    .withNetworkAliases(containerName)
     .withExposedPorts(8080)
     .withWaitStrategy(Wait.forHealthCheck())
     .withLogConsumer((stream) => {
@@ -258,14 +242,10 @@ async function setupProductStoreSvc(
   return container
 }
 
-// onecx-user-profile-svc:
-//     labels:
-//       - "traefik.http.services.onecx-user-profile-svc.loadbalancer.server.port=8080"
-//       - "traefik.http.routers.onecx-user-profile-svc.rule=Host(`onecx-user-profile-store-svc`)"
 async function setupUserProfileSvc(
   containerName: string,
   network: StartedNetwork,
-  postgresContainerName: string
+  postgresName: string
 ): Promise<StartedTestContainer> {
   logStart('container', containerName)
   const container = await new GenericContainer(process.env.ONECX_USER_PROFILE_SVC!)
@@ -273,7 +253,7 @@ async function setupUserProfileSvc(
     .withEnvironment({
       QUARKUS_DATASOURCE_USERNAME: 'onecx_user_profile',
       QUARKUS_DATASOURCE_PASSWORD: 'onecx_user_profile',
-      QUARKUS_DATASOURCE_JDBC_URL: `jdbc:postgresql://${postgresContainerName}:5432/onecx_user_profile?sslmode=disable`,
+      QUARKUS_DATASOURCE_JDBC_URL: `jdbc:postgresql://${postgresName}:5432/onecx_user_profile?sslmode=disable`,
       ...commonEnv,
       ...svcEnv
     })
@@ -284,6 +264,7 @@ async function setupUserProfileSvc(
       retries: 3
     })
     .withNetwork(network)
+    .withNetworkAliases(containerName)
     .withExposedPorts(8080)
     .withWaitStrategy(Wait.forHealthCheck())
     .withLogConsumer((stream) => {
@@ -296,16 +277,16 @@ async function setupUserProfileSvc(
   return container
 }
 
-// onecx-iam-kc-svc:
-//     labels:
-//       - "traefik.http.services.onecx-iam-kc-svc.loadbalancer.server.port=8080"
-//       - "traefik.http.routers.onecx-iam-kc-svc.rule=Host(`onecx-iam-kc-svc`)"
-async function setupIamKcSvc(containerName: string, network: StartedNetwork): Promise<StartedTestContainer> {
+async function setupIamKcSvc(
+  containerName: string,
+  network: StartedNetwork,
+  keycloakName: string
+): Promise<StartedTestContainer> {
   logStart('container', containerName)
   const container = await new GenericContainer(process.env.ONECX_IAM_KC_SVC!)
     .withName(containerName)
     .withEnvironment({
-      QUARKUS_KEYCLOAK_ADMIN_CLIENT_SERVER_URL: 'http://keycloak-app:8080',
+      QUARKUS_KEYCLOAK_ADMIN_CLIENT_SERVER_URL: `http://${keycloakName}:8080`,
       QUARKUS_KEYCLOAK_ADMIN_CLIENT_REALM: 'master',
       QUARKUS_KEYCLOAK_ADMIN_CLIENT_USERNAME: 'admin',
       QUARKUS_KEYCLOAK_ADMIN_CLIENT_PASSWORD: 'admin',
@@ -319,6 +300,7 @@ async function setupIamKcSvc(containerName: string, network: StartedNetwork): Pr
       retries: 3
     })
     .withNetwork(network)
+    .withNetworkAliases(containerName)
     .withExposedPorts(8080)
     .withWaitStrategy(Wait.forHealthCheck())
     .withLogConsumer((stream) => {
@@ -331,14 +313,10 @@ async function setupIamKcSvc(containerName: string, network: StartedNetwork): Pr
   return container
 }
 
-// onecx-tenant-svc:
-//     labels:
-//       - "traefik.http.services.onecx-tenant-svc.loadbalancer.server.port=8080"
-//       - "traefik.http.routers.onecx-tenant-svc.rule=Host(`onecx-tenant-svc`)"
 async function setupTenantSvc(
   containerName: string,
   network: StartedNetwork,
-  postgresContainerName: string
+  postgresName: string
 ): Promise<StartedTestContainer> {
   logStart('container', containerName)
   const container = await new GenericContainer(process.env.ONECX_TENANT_SVC!)
@@ -346,7 +324,7 @@ async function setupTenantSvc(
     .withEnvironment({
       QUARKUS_DATASOURCE_USERNAME: 'onecx_tenant',
       QUARKUS_DATASOURCE_PASSWORD: 'onecx_tenant',
-      QUARKUS_DATASOURCE_JDBC_URL: `jdbc:postgresql://${postgresContainerName}:5432/onecx_tenant?sslmode=disable`,
+      QUARKUS_DATASOURCE_JDBC_URL: `jdbc:postgresql://${postgresName}:5432/onecx_tenant?sslmode=disable`,
       ...commonEnv,
       ...svcEnv
     })
@@ -357,6 +335,7 @@ async function setupTenantSvc(
       retries: 3
     })
     .withNetwork(network)
+    .withNetworkAliases(containerName)
     .withExposedPorts(8080)
     .withWaitStrategy(Wait.forHealthCheck())
     .withLogConsumer((stream) => {
@@ -369,15 +348,10 @@ async function setupTenantSvc(
   return container
 }
 
-// onecx-workspace-svc:
-//     user: root
-//     labels:
-//       - "traefik.http.services.onecx-workspace-svc.loadbalancer.server.port=8080"
-//       - "traefik.http.routers.onecx-workspace-svc.rule=Host(`onecx-workspace-svc`)"
 async function setupWorkspaceSvc(
   containerName: string,
   network: StartedNetwork,
-  postgresContainerName: string
+  postgresName: string
 ): Promise<StartedTestContainer> {
   logStart('container', containerName)
   const container = await new GenericContainer(process.env.ONECX_WORKSPACE_SVC!)
@@ -385,7 +359,7 @@ async function setupWorkspaceSvc(
     .withEnvironment({
       QUARKUS_DATASOURCE_USERNAME: 'onecx_workspace',
       QUARKUS_DATASOURCE_PASSWORD: 'onecx_workspace',
-      QUARKUS_DATASOURCE_JDBC_URL: `jdbc:postgresql://${postgresContainerName}:5432/onecx_workspace?sslmode=disable`,
+      QUARKUS_DATASOURCE_JDBC_URL: `jdbc:postgresql://${postgresName}:5432/onecx_workspace?sslmode=disable`,
       TKIT_RS_CONTEXT_TENANT_ID_ENABLED: 'false',
       ...commonEnv,
       ...svcEnv
@@ -397,6 +371,7 @@ async function setupWorkspaceSvc(
       retries: 3
     })
     .withNetwork(network)
+    .withNetworkAliases(containerName)
     .withExposedPorts(8080)
     .withWaitStrategy(Wait.forHealthCheck())
     .withLogConsumer((stream) => {
@@ -409,10 +384,6 @@ async function setupWorkspaceSvc(
   return container
 }
 
-// onecx-shell-bff:
-//     labels:
-//       - "traefik.http.services.onecx-shell-bff.loadbalancer.server.port=8080"
-//       - "traefik.http.routers.onecx-shell-bff.rule=Host(`onecx-shell-bff`)"
 async function setupShellBff(containerName: string, network: StartedNetwork): Promise<StartedTestContainer> {
   logStart('container', containerName)
   const container = await new GenericContainer(process.env.ONECX_SHELL_BFF!)
@@ -430,6 +401,7 @@ async function setupShellBff(containerName: string, network: StartedNetwork): Pr
       startPeriod: 10_000
     })
     .withNetwork(network)
+    .withNetworkAliases(containerName)
     .withExposedPorts(8080)
     .withWaitStrategy(Wait.forHealthCheck())
     .withLogConsumer((stream) => {
@@ -442,10 +414,6 @@ async function setupShellBff(containerName: string, network: StartedNetwork): Pr
   return container
 }
 
-// onecx-shell-ui:
-//     labels:
-//       - "traefik.http.services.onecx-shell-ui.loadbalancer.server.port=8080"
-//       - "traefik.http.routers.onecx-shell-ui.rule=Host(`local-proxy`)&&PathPrefix(`/onecx-shell/`)"
 async function setupShellUi(
   containerName: string,
   network: StartedNetwork,
@@ -567,8 +535,9 @@ async function setup() {
 
   await checkDbExistence(postgresDbContainer)
 
-  const keycloak = 'keycloak-app'
-  const keycloakContainer = await setupKeycloak(keycloak, network)
+  // depends on postgresDbContainer
+  const keycloakName = 'keycloak-app'
+  const keycloakContainer = await setupKeycloak(keycloakName, network, postgresName)
 
   commonEnv['QUARKUS_OIDC_AUTH_SERVER_URL'] = `http://localhost:${keycloakContainer.getMappedPort(8080)}/realms/onecx`
   commonEnv['QUARKUS_OIDC_TOKEN_ISSUER'] = `http://localhost:${keycloakContainer.getMappedPort(8080)}/realms/onecx`
@@ -576,24 +545,31 @@ async function setup() {
   const theme_svc = 'onecx-theme-svc'
   const themeSvcContainer = await setupThemeSvc(theme_svc, network, postgresName)
 
-  const permission_svc = 'onecx-permission-svc'
-  const permissionSvcContainer = await setupPermissionSvc(permission_svc, network, postgresName)
+  // depends on postgresDbContainer
+  const permissionSvcName = 'onecx-permission-svc'
+  const permissionSvcContainer = await setupPermissionSvc(permissionSvcName, network, postgresName)
 
-  const product_store_svc = 'onecx-product-store-svc'
-  const productStoreSvcContainer = await setupProductStoreSvc(product_store_svc, network, postgresName)
+  // depends on postgresDbContainer
+  const productStoreSvcName = 'onecx-product-store-svc'
+  const productStoreSvcContainer = await setupProductStoreSvc(productStoreSvcName, network, postgresName)
 
-  const user_profile_svc = 'onecx-user-profile-svc'
-  const userProfileSvcContainer = await setupUserProfileSvc(user_profile_svc, network, postgresName)
+  // depends on postgresDbContainer
+  const userProfileSvcName = 'onecx-user-profile-svc'
+  const userProfileSvcContainer = await setupUserProfileSvc(userProfileSvcName, network, postgresName)
 
-  const iam_kc_svc = 'onecx-iam-kc-svc'
-  const iamKcSvcContainer = await setupIamKcSvc(iam_kc_svc, network)
+  // depends on postgresDbContainer
+  const iamKcSvcName = 'onecx-iam-kc-svc'
+  const iamKcSvcContainer = await setupIamKcSvc(iamKcSvcName, network, keycloakName)
 
-  const tenant_svc = 'onecx-tenant-svc'
-  const tenantSvcContainer = await setupTenantSvc(tenant_svc, network, postgresName)
+  // depends on postgresDbContainer
+  const tenantSvcName = 'onecx-tenant-svc'
+  const tenantSvcContainer = await setupTenantSvc(tenantSvcName, network, postgresName)
 
-  const workspace_svc = 'onecx-workspace-svc'
-  const workspaceSvcContainer = await setupWorkspaceSvc(workspace_svc, network, postgresName)
+  // depends on postgresDbContainer
+  const workspaceSvcName = 'onecx-workspace-svc'
+  const workspaceSvcContainer = await setupWorkspaceSvc(workspaceSvcName, network, postgresName)
 
+  // depends on postgresDbContainer, themeSvcContainer, permission_svc, product_store_svc, user_profile_svc, iam_kc_svc, tenant_svc, workspace_svc
   await importOnecx({
     THEME_SVC_PORT: themeSvcContainer.getMappedPort(8080),
     PERMISSION_SVC_PORT: permissionSvcContainer.getMappedPort(8080),
