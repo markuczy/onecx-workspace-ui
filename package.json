@@ -29,6 +29,7 @@
     "apigen-format": "npx prettier $npm_package_config_openapiYaml --write && npx prettier $npm_package_config_openapiOutput/**/* --write",
     "apigen-generate": "openapi-generator-cli generate -i $npm_package_config_openapiYaml -g typescript-angular -c apigen.yaml -o $npm_package_config_openapiOutput --type-mappings=AnyType=object,set=Array",
     "apigen": "npm run apigen-cleanup && npm run apigen-generate && npm run apigen-format",
+    "run-cy": "npx cypress run",
     "e2e-tests": "tsx --env-file=./e2e-tests/.env --env-file=./e2e-tests/bff.env --env-file=./e2e-tests/common.env --env-file=./e2e-tests/svc.env src/e2e-tests.ts"
   },
   "husky": {
@@ -48,6 +49,7 @@
     "@angular/platform-browser": "^18.2.6",
     "@angular/platform-browser-dynamic": "^18.2.6",
     "@angular/router": "^18.2.6",
+    "@cypress/webpack-preprocessor": "^6.0.2",
     "@ngneat/error-tailor": "5.0.1",
     "@ngneat/until-destroy": "^10.0.0",
     "@ngrx/effects": "^18.0.1",
@@ -74,6 +76,7 @@
     "primeicons": "^7.0.0",
     "primeng": "^17.18.11",
     "rxjs": "7.8.1",
+    "ts-loader": "^9.5.1",
     "tslib": "^2.8.0"
   },
   "devDependencies": {

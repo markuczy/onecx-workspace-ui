@@ -11,5 +11,5 @@
   },
   "files": [],
   "exclude": [],
-  "include": ["**/*.cy.ts"]
+  "include": ["**/*.cy.ts", "e2e-tests/cypress/e2e/module.cy.js"]
 }
