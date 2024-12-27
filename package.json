@@ -30,7 +30,7 @@
     "apigen-generate": "openapi-generator-cli generate -i $npm_package_config_openapiYaml -g typescript-angular -c apigen.yaml -o $npm_package_config_openapiOutput --type-mappings=AnyType=object,set=Array",
     "apigen": "npm run apigen-cleanup && npm run apigen-generate && npm run apigen-format",
     "run-cy": "npx cypress run",
-    "e2e-tests": "tsx --env-file=./e2e-tests/.env --env-file=./e2e-tests/bff.env --env-file=./e2e-tests/common.env --env-file=./e2e-tests/svc.env src/e2e-tests.ts"
+    "e2e-tests": "tsx src/e2e-tests.ts"
   },
   "husky": {
     "hooks": {

@@ -4,7 +4,7 @@ describe('module spec', () => {
   beforeEach(() => {
     // SHELL_ADDRESS = Cypress.env('SHELL_ADDRESS')
     // KEYCLOAK_ADDRESS = Cypress.env('KEYCLOAK_ADDRESS')
-    SHELL_ADDRESS = 'local-proxy:8080'
+    SHELL_ADDRESS = 'onecx-shell-ui:8080'
     KEYCLOAK_ADDRESS = 'keycloak-app:8080'
   })
   it('passes', () => {
