@@ -7,6 +7,9 @@ export class OneCXKeycloakContainer extends OneCXContainer {
   private onecxStartCommand: string[]
   private onecxRealm: string
   private onecxStartTimeout: number
+  private onecxAdminRealm = 'master'
+  private onecxAdminUsername = 'admin'
+  private onecxAdminPassword = 'admin'
 
   constructor(
     image: string,
@@ -72,6 +75,21 @@ export class OneCXKeycloakContainer extends OneCXContainer {
     return this.onecxRealm
   }
 
+  public withOneCXAdminRealm(realm: string) {
+    this.onecxAdminRealm = realm
+    return this
+  }
+
+  public withOneCXAdminUsername(username: string) {
+    this.onecxAdminUsername = username
+    return this
+  }
+
+  public withOneCXAdminPassword(password: string) {
+    this.onecxAdminPassword = password
+    return this
+  }
+
   async start(): Promise<StartedOneCXKeycloakContainer> {
     this.withCommand(this.onecxStartCommand).withStartupTimeout(this.onecxStartTimeout)
 
@@ -84,12 +102,42 @@ export class OneCXKeycloakContainer extends OneCXContainer {
       ])
     }
 
-    return new StartedOneCXKeycloakContainer(await super.start(), this.getOneCXAlias())
+    return new StartedOneCXKeycloakContainer(
+      await super.start(),
+      this.getOneCXAlias(),
+      this.onecxRealm,
+      this.onecxAdminRealm,
+      this.onecxAdminUsername,
+      this.onecxAdminPassword
+    )
   }
 }
 
 export class StartedOneCXKeycloakContainer extends StartedOneCXContainer {
-  constructor(startedTestContainer: StartedTestContainer, alias: string) {
+  constructor(
+    startedTestContainer: StartedTestContainer,
+    alias: string,
+    private readonly onecxRealm: string,
+    private readonly onecxAdminRealm: string,
+    private readonly onecxAdminUsername: string,
+    private readonly onecxAdminPassword: string
+  ) {
     super(startedTestContainer, alias)
+  }
+
+  public getOneCXRealm() {
+    return this.onecxRealm
+  }
+
+  public getOneCXAdminRealm() {
+    return this.onecxAdminRealm
+  }
+
+  public getOneCXAdminUsername() {
+    return this.onecxAdminUsername
+  }
+
+  public getOneCXAdminPassword() {
+    return this.onecxAdminPassword
   }
 }

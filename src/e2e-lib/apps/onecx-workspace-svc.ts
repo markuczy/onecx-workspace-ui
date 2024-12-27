@@ -16,7 +16,7 @@ export class OneCXWorkspaceSvcContainer extends OneCXSvcContainer {
       ...this.getOneCXEnvironment(),
       QUARKUS_DATASOURCE_USERNAME: 'onecx_workspace',
       QUARKUS_DATASOURCE_PASSWORD: 'onecx_workspace',
-      QUARKUS_DATASOURCE_JDBC_URL: `jdbc:postgresql://${this.getOneCXDatabaseContainerName()}:${this.getOneCXDatabaseExposedPort}/onecx_workspace?sslmode=disable`,
+      QUARKUS_DATASOURCE_JDBC_URL: `jdbc:postgresql://${this.getOneCXDatabaseContainer().getOneCXAlias()}:${this.getOneCXDatabaseContainer().getOneCXExposedPort()}/onecx_workspace?sslmode=disable`,
       TKIT_RS_CONTEXT_TENANT_ID_ENABLED: 'false'
     })
   }

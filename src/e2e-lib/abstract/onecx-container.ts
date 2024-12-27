@@ -94,7 +94,7 @@ export class StartedOneCXContainer extends AbstractStartedContainer {
   constructor(
     startedTestContainer: StartedTestContainer,
     private readonly onecxAlias: string,
-    private readonly exposedPort?: number
+    private readonly onecxExposedPort?: number
   ) {
     super(startedTestContainer)
 
@@ -106,7 +106,7 @@ export class StartedOneCXContainer extends AbstractStartedContainer {
   }
 
   public getOneCXExposedPort() {
-    return this.exposedPort
+    return this.onecxExposedPort
   }
 
   private log(message: string) {

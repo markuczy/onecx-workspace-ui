@@ -16,7 +16,7 @@ export class OneCXThemeSvcContainer extends OneCXSvcContainer {
       ...this.getOneCXEnvironment(),
       QUARKUS_DATASOURCE_USERNAME: 'onecx_theme',
       QUARKUS_DATASOURCE_PASSWORD: 'onecx_theme',
-      QUARKUS_DATASOURCE_JDBC_URL: `jdbc:postgresql://${this.getOneCXDatabaseContainerName()}:${this.getOneCXDatabaseExposedPort}/onecx_theme?sslmode=disable`
+      QUARKUS_DATASOURCE_JDBC_URL: `jdbc:postgresql://${this.getOneCXDatabaseContainer().getOneCXAlias()}:${this.getOneCXDatabaseContainer().getOneCXExposedPort()}/onecx_theme?sslmode=disable`
     })
   }
 

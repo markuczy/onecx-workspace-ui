@@ -3,8 +3,6 @@ import { OneCXUiContainer, StartedOneCXUiContainer } from '../abstract/onecx-ui'
 import { commonEnv } from '../constants/e2e-config'
 import { StartedOneCXKeycloakContainer } from './onecx-keycloak'
 
-// TODO: keycloak-app static name and port
-// ONECX_PERMISSIONS_PRODUCT_NAME based on the database
 export class OneCXShellUiContainer extends OneCXUiContainer {
   constructor(image: string, network: StartedNetwork, keycloakContainer: StartedOneCXKeycloakContainer) {
     super(image, 'onecx-shell-ui', 'shell', network)

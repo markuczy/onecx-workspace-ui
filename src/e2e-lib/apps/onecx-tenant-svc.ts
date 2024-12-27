@@ -16,7 +16,7 @@ export class OneCXTenantSvcContainer extends OneCXSvcContainer {
       ...this.getOneCXEnvironment(),
       QUARKUS_DATASOURCE_USERNAME: 'onecx_tenant',
       QUARKUS_DATASOURCE_PASSWORD: 'onecx_tenant',
-      QUARKUS_DATASOURCE_JDBC_URL: `jdbc:postgresql://${this.getOneCXDatabaseContainerName()}:${this.getOneCXDatabaseExposedPort}/onecx_tenant?sslmode=disable`
+      QUARKUS_DATASOURCE_JDBC_URL: `jdbc:postgresql://${this.getOneCXDatabaseContainer().getOneCXAlias()}:${this.getOneCXDatabaseContainer().getOneCXExposedPort()}/onecx_tenant?sslmode=disable`
     })
   }
 

@@ -3,7 +3,6 @@ import { OneCXSvcContainer, StartedOneCXSvcContainer } from '../abstract/onecx-s
 import { StartedOneCXPostgresContainer } from '../core/onecx-postgres'
 import { StartedOneCXKeycloakContainer } from '../core/onecx-keycloak'
 
-// TODO: Keycloak data static
 export class OneCXIamKcSvcContainer extends OneCXSvcContainer {
   constructor(
     image: string,
@@ -15,10 +14,10 @@ export class OneCXIamKcSvcContainer extends OneCXSvcContainer {
 
     this.withOneCXEnvironment({
       ...this.getOneCXEnvironment(),
-      QUARKUS_KEYCLOAK_ADMIN_CLIENT_SERVER_URL: `http://${this.getOneCXKeycloakContainerName()}:${this.getOneCXKeycloakExposedPort()}`,
-      QUARKUS_KEYCLOAK_ADMIN_CLIENT_REALM: 'master',
-      QUARKUS_KEYCLOAK_ADMIN_CLIENT_USERNAME: 'admin',
-      QUARKUS_KEYCLOAK_ADMIN_CLIENT_PASSWORD: 'admin'
+      QUARKUS_KEYCLOAK_ADMIN_CLIENT_SERVER_URL: `http://${this.getOneCXKeycloakContainer().getOneCXAlias()}:${this.getOneCXKeycloakContainer().getOneCXExposedPort()}`,
+      QUARKUS_KEYCLOAK_ADMIN_CLIENT_REALM: `${this.getOneCXKeycloakContainer().getOneCXAdminRealm()}`,
+      QUARKUS_KEYCLOAK_ADMIN_CLIENT_USERNAME: `${this.getOneCXKeycloakContainer().getOneCXAdminUsername()}`,
+      QUARKUS_KEYCLOAK_ADMIN_CLIENT_PASSWORD: `${this.getOneCXKeycloakContainer().getOneCXAdminPassword()}`
     })
   }
 
