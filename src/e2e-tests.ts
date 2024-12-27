@@ -1,5 +1,4 @@
-import { exec } from 'child_process'
-import { GenericContainer, Network, StartedNetwork, StartedTestContainer, Wait } from 'testcontainers'
+import { GenericContainer, Network, StartedNetwork, StartedTestContainer } from 'testcontainers'
 import * as path from 'path'
 import * as fs from 'fs'
 import { checkDbExistence, importDatabaseData, logStart, logStarted, logStopped } from './e2e-lib/utils'
@@ -17,312 +16,18 @@ import { OneCXShellBffContainer } from './e2e-lib/onecx-shell-bff'
 import { OneCXWorkspaceBffContainer } from './e2e-lib/onecx-workspace-bff'
 import { OneCXShellUiContainer } from './e2e-lib/onecx-shell-ui'
 import { OneCXWorkspaceUiContainer } from './e2e-lib/onecx-workspace-ui'
-
-// async function setupThemeBff(containerName: string, network: StartedNetwork): Promise<StartedTestContainer> {
-//   logStart('container', containerName)
-//   const container = await new GenericContainer(process.env.ONECX_THEME_BFF!)
-//     .withName(containerName)
-//     .withEnvironment({
-//       ONECX_PERMISSIONS_PRODUCT_NAME: 'onecx-theme',
-//       ...commonEnv,
-//       ...bffEnv
-//     })
-//     .withHealthCheck({
-//       test: ['CMD-SHELL', `curl --head -fsS http://localhost:8080/q/health`],
-//       interval: 10_000,
-//       timeout: 5_000,
-//       retries: 3
-//     })
-//     .withNetwork(network)
-//     .withNetworkAliases(containerName)
-//     .withExposedPorts(8080)
-//     .withWaitStrategy(Wait.forHealthCheck())
-//     .withLogConsumer((stream) => {
-//       stream.on('data', (line) => console.log(`${containerName}: `, line))
-//       stream.on('err', (line) => console.error(`${containerName}: `, line))
-//       stream.on('end', () => console.log(`${containerName}: Stream closed`))
-//     })
-//     .start()
-//   logStarted(container, 8080)
-//   return container
-// }
-
-// async function setupPermissionBff(containerName: string, network: StartedNetwork): Promise<StartedTestContainer> {
-//   logStart('container', containerName)
-//   const container = await new GenericContainer(process.env.ONECX_PERMISSION_BFF!)
-//     .withName(containerName)
-//     .withEnvironment({
-//       ONECX_PERMISSIONS_PRODUCT_NAME: 'onecx-permission',
-//       ...commonEnv,
-//       ...bffEnv
-//     })
-//     .withHealthCheck({
-//       test: ['CMD-SHELL', `curl --head -fsS http://localhost:8080/q/health`],
-//       interval: 10_000,
-//       timeout: 5_000,
-//       retries: 3
-//     })
-//     .withNetwork(network)
-//     .withNetworkAliases(containerName)
-//     .withExposedPorts(8080)
-//     .withWaitStrategy(Wait.forHealthCheck())
-//     .withLogConsumer((stream) => {
-//       stream.on('data', (line) => console.log(`${containerName}: `, line))
-//       stream.on('err', (line) => console.error(`${containerName}: `, line))
-//       stream.on('end', () => console.log(`${containerName}: Stream closed`))
-//     })
-//     .start()
-//   logStarted(container, 8080)
-//   return container
-// }
-
-// async function setupProductStoreBff(containerName: string, network: StartedNetwork): Promise<StartedTestContainer> {
-//   logStart('container', containerName)
-//   const container = await new GenericContainer(process.env.ONECX_PRODUCT_STORE_BFF!)
-//     .withName(containerName)
-//     .withEnvironment({
-//       ONECX_PERMISSIONS_PRODUCT_NAME: 'onecx-product-store',
-//       ...commonEnv,
-//       ...bffEnv
-//     })
-//     .withHealthCheck({
-//       test: ['CMD-SHELL', `curl --head -fsS http://localhost:8080/q/health`],
-//       interval: 10_000,
-//       timeout: 5_000,
-//       retries: 3
-//     })
-//     .withNetwork(network)
-//     .withNetworkAliases(containerName)
-//     .withExposedPorts(8080)
-//     .withWaitStrategy(Wait.forHealthCheck())
-//     .withLogConsumer((stream) => {
-//       stream.on('data', (line) => console.log(`${containerName}: `, line))
-//       stream.on('err', (line) => console.error(`${containerName}: `, line))
-//       stream.on('end', () => console.log(`${containerName}: Stream closed`))
-//     })
-//     .start()
-//   logStarted(container, 8080)
-//   return container
-// }
-
-// async function setupUserProfileBff(containerName: string, network: StartedNetwork): Promise<StartedTestContainer> {
-//   logStart('container', containerName)
-//   const container = await new GenericContainer(process.env.ONECX_USER_PROFILE_BFF!)
-//     .withName(containerName)
-//     .withEnvironment({
-//       ONECX_PERMISSIONS_PRODUCT_NAME: 'onecx-user-profile',
-//       ...commonEnv,
-//       ...bffEnv
-//     })
-//     .withHealthCheck({
-//       test: ['CMD-SHELL', `curl --head -fsS http://localhost:8080/q/health`],
-//       interval: 10_000,
-//       timeout: 5_000,
-//       retries: 3
-//     })
-//     .withNetwork(network)
-//     .withNetworkAliases(containerName)
-//     .withExposedPorts(8080)
-//     .withWaitStrategy(Wait.forHealthCheck())
-//     .withLogConsumer((stream) => {
-//       stream.on('data', (line) => console.log(`${containerName}: `, line))
-//       stream.on('err', (line) => console.error(`${containerName}: `, line))
-//       stream.on('end', () => console.log(`${containerName}: Stream closed`))
-//     })
-//     .start()
-//   logStarted(container, 8080)
-//   return container
-// }
-
-// async function setupIamBff(containerName: string, network: StartedNetwork): Promise<StartedTestContainer> {
-//   logStart('container', containerName)
-//   const container = await new GenericContainer(process.env.ONECX_IAM_BFF!)
-//     .withName(containerName)
-//     .withEnvironment({
-//       ONECX_PERMISSIONS_PRODUCT_NAME: 'onecx-iam',
-//       ...commonEnv,
-//       ...bffEnv
-//     })
-//     .withHealthCheck({
-//       test: ['CMD-SHELL', `curl --head -fsS http://localhost:8080/q/health`],
-//       interval: 10_000,
-//       timeout: 5_000,
-//       retries: 3
-//     })
-//     .withNetwork(network)
-//     .withNetworkAliases(containerName)
-//     .withExposedPorts(8080)
-//     .withWaitStrategy(Wait.forHealthCheck())
-//     .withLogConsumer((stream) => {
-//       stream.on('data', (line) => console.log(`${containerName}: `, line))
-//       stream.on('err', (line) => console.error(`${containerName}: `, line))
-//       stream.on('end', () => console.log(`${containerName}: Stream closed`))
-//     })
-//     .start()
-//   logStarted(container, 8080)
-//   return container
-// }
-
-// async function setupTenantBff(containerName: string, network: StartedNetwork): Promise<StartedTestContainer> {
-//   logStart('container', containerName)
-//   const container = await new GenericContainer(process.env.ONECX_TENANT_BFF!)
-//     .withName(containerName)
-//     .withEnvironment({
-//       ONECX_PERMISSIONS_PRODUCT_NAME: 'onecx-tenant',
-//       ...commonEnv,
-//       ...bffEnv
-//     })
-//     .withHealthCheck({
-//       test: ['CMD-SHELL', `curl --head -fsS http://localhost:8080/q/health`],
-//       interval: 10_000,
-//       timeout: 5_000,
-//       retries: 3
-//     })
-//     .withNetwork(network)
-//     .withNetworkAliases(containerName)
-//     .withExposedPorts(8080)
-//     .withWaitStrategy(Wait.forHealthCheck())
-//     .withLogConsumer((stream) => {
-//       stream.on('data', (line) => console.log(`${containerName}: `, line))
-//       stream.on('err', (line) => console.error(`${containerName}: `, line))
-//       stream.on('end', () => console.log(`${containerName}: Stream closed`))
-//     })
-//     .start()
-//   logStarted(container, 8080)
-//   return container
-// }
-
-// async function setupThemeUi(containerName: string, network: StartedNetwork): Promise<StartedTestContainer> {
-//   logStart('container', containerName)
-//   const container = await new GenericContainer(process.env.ONECX_THEME_UI!)
-//     .withName(containerName)
-//     .withEnvironment({
-//       APP_BASE_HREF: '/mfe/theme/',
-//       APP_ID: 'onecx-theme-ui',
-//       PRODUCT_NAME: 'onecx-theme'
-//     })
-//     .withNetwork(network)
-//     .withNetworkAliases(containerName)
-//     .withExposedPorts(8080)
-//     .withLogConsumer((stream) => {
-//       stream.on('data', (line) => console.log(`${containerName}: `, line))
-//       stream.on('err', (line) => console.error(`${containerName}: `, line))
-//       stream.on('end', () => console.log(`${containerName}: Stream closed`))
-//     })
-//     .start()
-//   logStarted(container, 8080)
-//   return container
-// }
-
-// async function setupPermissionUi(containerName: string, network: StartedNetwork): Promise<StartedTestContainer> {
-//   logStart('container', containerName)
-//   const container = await new GenericContainer(process.env.ONECX_PERMISSION_UI!)
-//     .withName(containerName)
-//     .withEnvironment({
-//       APP_BASE_HREF: '/mfe/permission/',
-//       APP_ID: 'onecx-permission-ui',
-//       PRODUCT_NAME: 'onecx-permission'
-//     })
-//     .withNetwork(network)
-//     .withNetworkAliases(containerName)
-//     .withExposedPorts(8080)
-//     .withLogConsumer((stream) => {
-//       stream.on('data', (line) => console.log(`${containerName}: `, line))
-//       stream.on('err', (line) => console.error(`${containerName}: `, line))
-//       stream.on('end', () => console.log(`${containerName}: Stream closed`))
-//     })
-//     .start()
-//   logStarted(container, 8080)
-//   return container
-// }
-
-// async function setupProductStoreUi(containerName: string, network: StartedNetwork): Promise<StartedTestContainer> {
-//   logStart('container', containerName)
-//   const container = await new GenericContainer(process.env.ONECX_PRODUCT_STORE_UI!)
-//     .withName(containerName)
-//     .withEnvironment({
-//       APP_BASE_HREF: '/mfe/product-store/',
-//       APP_ID: 'onecx-product-store-ui',
-//       PRODUCT_NAME: 'onecx-product-store'
-//     })
-//     .withNetwork(network)
-//     .withNetworkAliases(containerName)
-//     .withExposedPorts(8080)
-//     .withLogConsumer((stream) => {
-//       stream.on('data', (line) => console.log(`${containerName}: `, line))
-//       stream.on('err', (line) => console.error(`${containerName}: `, line))
-//       stream.on('end', () => console.log(`${containerName}: Stream closed`))
-//     })
-//     .start()
-//   logStarted(container, 8080)
-//   return container
-// }
-
-// async function setupUserProfileUi(containerName: string, network: StartedNetwork): Promise<StartedTestContainer> {
-//   logStart('container', containerName)
-//   const container = await new GenericContainer(process.env.ONECX_USER_PROFILE_UI!)
-//     .withName(containerName)
-//     .withEnvironment({
-//       APP_BASE_HREF: '/mfe/user-profile/',
-//       APP_ID: 'onecx-user-profile-ui',
-//       PRODUCT_NAME: 'onecx-user-profile'
-//     })
-//     .withNetwork(network)
-//     .withNetworkAliases(containerName)
-//     .withExposedPorts(8080)
-//     .withLogConsumer((stream) => {
-//       stream.on('data', (line) => console.log(`${containerName}: `, line))
-//       stream.on('err', (line) => console.error(`${containerName}: `, line))
-//       stream.on('end', () => console.log(`${containerName}: Stream closed`))
-//     })
-//     .start()
-//   logStarted(container, 8080)
-//   return container
-// }
-
-// async function setupIamUi(containerName: string, network: StartedNetwork): Promise<StartedTestContainer> {
-//   logStart('container', containerName)
-//   const container = await new GenericContainer(process.env.ONECX_IAM_UI!)
-//     .withName(containerName)
-//     .withEnvironment({
-//       APP_BASE_HREF: '/mfe/iam/',
-//       APP_ID: 'onecx-iam-ui',
-//       PRODUCT_NAME: 'onecx-iam'
-//     })
-//     .withNetwork(network)
-//     .withNetworkAliases(containerName)
-//     .withExposedPorts(8080)
-//     .withLogConsumer((stream) => {
-//       stream.on('data', (line) => console.log(`${containerName}: `, line))
-//       stream.on('err', (line) => console.error(`${containerName}: `, line))
-//       stream.on('end', () => console.log(`${containerName}: Stream closed`))
-//     })
-//     .start()
-//   logStarted(container, 8080)
-//   return container
-// }
-
-// async function setupTenantUi(containerName: string, network: StartedNetwork): Promise<StartedTestContainer> {
-//   logStart('container', containerName)
-//   const container = await new GenericContainer(process.env.ONECX_TENANT_UI!)
-//     .withName(containerName)
-//     .withEnvironment({
-//       APP_BASE_HREF: '/mfe/tenant/',
-//       APP_ID: 'onecx-tenant-ui',
-//       PRODUCT_NAME: 'onecx-tenant'
-//     })
-//     .withNetwork(network)
-//     .withNetworkAliases(containerName)
-//     .withExposedPorts(8080)
-//     .withLogConsumer((stream) => {
-//       stream.on('data', (line) => console.log(`${containerName}: `, line))
-//       stream.on('err', (line) => console.error(`${containerName}: `, line))
-//       stream.on('end', () => console.log(`${containerName}: Stream closed`))
-//     })
-//     .start()
-//   logStarted(container, 8080)
-//   return container
-// }
+import { OneCXPermissionBffContainer } from './e2e-lib/onecx-permission-bff'
+import { OneCXIamBffContainer } from './e2e-lib/onecx-iam-bff'
+import { OneCXProductStoreBffContainer } from './e2e-lib/onecx-product-store-bff'
+import { OneCXTenantBffContainer } from './e2e-lib/onecx-tenant-bff'
+import { OneCXThemeBffContainer } from './e2e-lib/onecx-theme-bff'
+import { OneCXUserProfileBffContainer } from './e2e-lib/onecx-user-profile-bff'
+import { OneCXThemeUiContainer } from './e2e-lib/onecx-theme-ui'
+import { OneCXIamUiContainer } from './e2e-lib/onecx-iam-ui'
+import { OneCXPermissionUiContainer } from './e2e-lib/onecx-permision-ui'
+import { OneCXProductStoreUiContainer } from './e2e-lib/onecx-product-store-ui'
+import { OneCXTenantUiContainer } from './e2e-lib/onecx-tenant-ui'
+import { OneCXUserProfileUiContainer } from './e2e-lib/onecx-user-profile-ui'
 
 // TODO: Make variables for container names
 // TODO: Whenever something is not correctly set up, script should teardown and fail
@@ -426,9 +131,8 @@ async function setup() {
   // depends on keycloak, shell-bff
   const shellUiContainer = await new OneCXShellUiContainer(containerImagesEnv.ONECX_SHELL_UI, network).start()
 
-  // // depends on themeSvc
-  // const themeBffName = 'onecx-theme-bff'
-  // const themeBffContainer = await setupThemeBff(themeBffName, network)
+  // depends on themeSvc
+  const themeBffContainer = await new OneCXThemeBffContainer(containerImagesEnv.ONECX_THEME_BFF, network).start()
 
   // depends on workspaceSvc
   const workspaceBffContainer = await new OneCXWorkspaceBffContainer(
@@ -436,29 +140,32 @@ async function setup() {
     network
   ).start()
 
-  // // depends on permissionSvc
-  // const permissionBffName = 'onecx-permission-bff'
-  // const permissionBffContainer = await setupPermissionBff(permissionBffName, network)
+  // depends on permissionSvc
+  const permissionBffContainer = await new OneCXPermissionBffContainer(
+    containerImagesEnv.ONECX_PERMISSION_BFF,
+    network
+  ).start()
 
-  // // depends on productStoreSvc
-  // const productStoreBffName = 'onecx-productStore-bff'
-  // const productStoreBffContainer = await setupProductStoreBff(productStoreBffName, network)
+  // depends on productStoreSvc
+  const productStoreBffContainer = await new OneCXProductStoreBffContainer(
+    containerImagesEnv.ONECX_PRODUCT_STORE_BFF,
+    network
+  ).start()
 
-  // // depends on userProfileSvc
-  // const userProfileBffName = 'onecx-userProfile-bff'
-  // const userProfileBffContainer = await setupUserProfileBff(userProfileBffName, network)
+  // depends on userProfileSvc
+  const userProfileBffContainer = await new OneCXUserProfileBffContainer(
+    containerImagesEnv.ONECX_USER_PROFILE_BFF,
+    network
+  ).start()
 
-  // // depends on iamSvc
-  // const iamBffName = 'onecx-iam-bff'
-  // const iamBffContainer = await setupIamBff(iamBffName, network)
+  // depends on iamSvc
+  const iamBffContainer = await new OneCXIamBffContainer(containerImagesEnv.ONECX_IAM_BFF, network).start()
 
-  // // depends on tenantSvc
-  // const tenantBffName = 'onecx-tenant-bff'
-  // const tenantBffContainer = await setupTenantBff(tenantBffName, network)
+  // depends on tenantSvc
+  const tenantBffContainer = await new OneCXTenantBffContainer(containerImagesEnv.ONECX_TENANT_BFF, network).start()
 
-  // // depends on themeBff
-  // const themeUiName = 'onecx-theme-ui'
-  // const themeUiContainer = await setupThemeUi(themeUiName, network)
+  // depends on themeBff
+  const themeUiContainer = await new OneCXThemeUiContainer(containerImagesEnv.ONECX_THEME_UI, network).start()
 
   // depends on workspaceBff
   const workspaceUiContainer = await new OneCXWorkspaceUiContainer(
@@ -466,25 +173,29 @@ async function setup() {
     network
   ).start()
 
-  // // depends on permissionUi
-  // const permissionUiName = 'onecx-permission-ui'
-  // const permissionUiContainer = await setupPermissionUi(permissionUiName, network)
+  // depends on permissionUi
+  const permissionUiContainer = await new OneCXPermissionUiContainer(
+    containerImagesEnv.ONECX_PERMISSION_UI,
+    network
+  ).start()
 
-  // // depends on productStoreUi
-  // const productStoreUiName = 'onecx-productStore-ui'
-  // const productStoreUiContainer = await setupProductStoreUi(productStoreUiName, network)
+  // depends on productStoreUi
+  const productStoreUiContainer = await new OneCXProductStoreUiContainer(
+    containerImagesEnv.ONECX_PRODUCT_STORE_UI,
+    network
+  ).start()
 
-  // // depends on userProfileUi
-  // const userProfileUiName = 'onecx-userProfile-ui'
-  // const userProfileUiContainer = await setupUserProfileUi(userProfileUiName, network)
+  // depends on userProfileUi
+  const userProfileUiContainer = await new OneCXUserProfileUiContainer(
+    containerImagesEnv.ONECX_USER_PROFILE_UI,
+    network
+  ).start()
 
-  // // depends on iamUi
-  // const iamUiName = 'onecx-iam-ui'
-  // const iamUiContainer = await setupIamUi(iamUiName, network)
+  // depends on iamUi
+  const iamUiContainer = await new OneCXIamUiContainer(containerImagesEnv.ONECX_IAM_UI, network).start()
 
-  // // depends on tenantUi
-  // const tenantUiName = 'onecx-tenant-ui'
-  // const tenantUiContainer = await setupTenantUi(tenantUiName, network)
+  // depends on tenantUi
+  const tenantUiContainer = await new OneCXTenantUiContainer(containerImagesEnv.ONECX_TENANT_UI, network).start()
 
   console.log('finishing e2e tests setup')
   return {
@@ -502,30 +213,28 @@ async function setup() {
       ],
       ...[
         shellBffContainer,
-        // themeBffContainer,
-        workspaceBffContainer
-        // permissionBffContainer,
-        // productStoreBffContainer,
-        // userProfileBffContainer,
-        // iamBffContainer,
-        // tenantBffContainer
+        themeBffContainer,
+        workspaceBffContainer,
+        permissionBffContainer,
+        productStoreBffContainer,
+        userProfileBffContainer,
+        iamBffContainer,
+        tenantBffContainer
       ],
       ...[
         shellUiContainer,
-        // themeUiContainer,
-        workspaceUiContainer
-        // permissionUiContainer,
-        // productStoreUiContainer,
-        // userProfileUiContainer,
-        // iamUiContainer,
-        // tenantUiContainer
+        themeUiContainer,
+        workspaceUiContainer,
+        permissionUiContainer,
+        productStoreUiContainer,
+        userProfileUiContainer,
+        iamUiContainer,
+        tenantUiContainer
       ],
       network
     ],
     uiContainer: shellUiContainer.getOneCXAlias(),
-    uiPort: shellUiContainer.getMappedPort(8080), // TODO: Remove?
     keycloakContainer: keycloakContainer.getOneCXAlias(),
-    keycloakPort: keycloakContainer.getMappedPort(8080), // TODO: Remove?
     network: network
   }
 }
