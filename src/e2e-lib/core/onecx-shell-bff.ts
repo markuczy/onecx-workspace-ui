@@ -1,9 +1,9 @@
 import { StartedNetwork } from 'testcontainers'
-import { OneCXBffContainer, StartedOneCXBffContainer } from '../abstract/onecx-bff'
+import { OneCXBffContainer } from '../abstract/onecx-bff'
 
 export class OneCXShellBffContainer extends OneCXBffContainer {
   constructor(image: string, network: StartedNetwork) {
-    super(image, 'onecx-shell-bff', 'shell', network)
+    super(image, 'onecx-shell-bff', 'shell', 'shell-bff', network)
 
     this.withOneCXHealthCheck({
       test: ['CMD-SHELL', `curl --head -fsS http://localhost:8080/q/health`],
@@ -16,15 +16,4 @@ export class OneCXShellBffContainer extends OneCXBffContainer {
       ONECX_PERMISSIONS_PRODUCT_NAME: 'onecx-shell'
     })
   }
-
-  async start(): Promise<StartedOneCXShellBffContainer> {
-    return new StartedOneCXShellBffContainer(
-      await super.start(),
-      this.getOneCXAppType(),
-      this.getOneCXApplicationName(),
-      this.getOneCXAlias()
-    )
-  }
 }
-
-export class StartedOneCXShellBffContainer extends StartedOneCXBffContainer {}

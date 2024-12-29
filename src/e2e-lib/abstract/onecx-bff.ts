@@ -8,9 +8,19 @@ export class OneCXBffContainer extends OneCXAppContainer {
     image: string,
     aliasAndName: string,
     applicationName: OneCXCoreApplication | string,
+    appId: string,
     network: StartedNetwork
   ) {
-    super(image, aliasAndName, 'BFF', applicationName, network)
+    super(
+      image,
+      aliasAndName,
+      {
+        appId: appId,
+        applicationName: applicationName,
+        appType: 'BFF'
+      },
+      network
+    )
 
     this.withOneCXEnvironment({
       ...this.getOneCXEnvironment(),
@@ -24,15 +34,6 @@ export class OneCXBffContainer extends OneCXAppContainer {
         retries: 3
       })
       .withOneCXExposedPort(8080)
-  }
-
-  public async start(): Promise<StartedOneCXBffContainer> {
-    return new StartedOneCXBffContainer(
-      await super.start(),
-      this.getOneCXAppType(),
-      this.getOneCXApplicationName(),
-      this.getOneCXAlias()
-    )
   }
 }
 

@@ -7,22 +7,23 @@ export class OneCXUiContainer extends OneCXAppContainer {
     image: string,
     aliasAndName: string,
     applicationName: OneCXCoreApplication | string,
+    appId: string,
     network: StartedNetwork
   ) {
-    super(image, aliasAndName, 'UI', applicationName, network)
+    super(
+      image,
+      aliasAndName,
+      {
+        appId: appId,
+        applicationName: applicationName,
+        appType: 'UI'
+      },
+      network
+    )
 
     this.withOneCXEnvironment({
       ...this.getOneCXEnvironment()
     }).withOneCXExposedPort(8080)
-  }
-
-  public async start(): Promise<StartedOneCXUiContainer> {
-    return new StartedOneCXUiContainer(
-      await super.start(),
-      this.getOneCXAppType(),
-      this.getOneCXApplicationName(),
-      this.getOneCXAlias()
-    )
   }
 }
 

@@ -10,7 +10,7 @@ export class OneCXThemeSvcContainer extends OneCXSvcContainer {
     databaseContainer: StartedOneCXPostgresContainer,
     keycloakContainer: StartedOneCXKeycloakContainer
   ) {
-    super(image, 'onecx-theme-svc', 'theme', network, databaseContainer, keycloakContainer)
+    super(image, 'onecx-theme-svc', 'theme', 'theme-svc', network, databaseContainer, keycloakContainer)
 
     this.withOneCXEnvironment({
       ...this.getOneCXEnvironment(),
@@ -19,15 +19,4 @@ export class OneCXThemeSvcContainer extends OneCXSvcContainer {
       QUARKUS_DATASOURCE_JDBC_URL: `jdbc:postgresql://${this.getOneCXDatabaseContainer().getOneCXAlias()}:${this.getOneCXDatabaseContainer().getOneCXExposedPort()}/onecx_theme?sslmode=disable`
     })
   }
-
-  async start(): Promise<StartedOneCXThemeSvcContainer> {
-    return new StartedOneCXThemeSvcContainer(
-      await super.start(),
-      this.getOneCXAppType(),
-      this.getOneCXApplicationName(),
-      this.getOneCXAlias()
-    )
-  }
 }
-
-export class StartedOneCXThemeSvcContainer extends StartedOneCXSvcContainer {}

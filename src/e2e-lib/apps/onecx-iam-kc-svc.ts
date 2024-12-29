@@ -10,7 +10,7 @@ export class OneCXIamKcSvcContainer extends OneCXSvcContainer {
     databaseContainer: StartedOneCXPostgresContainer,
     keycloakContainer: StartedOneCXKeycloakContainer
   ) {
-    super(image, 'onecx-iam-kc-svc', 'iam', network, databaseContainer, keycloakContainer)
+    super(image, 'onecx-iam-kc-svc', 'iam', 'iam-kc-svc', network, databaseContainer, keycloakContainer)
 
     this.withOneCXEnvironment({
       ...this.getOneCXEnvironment(),
@@ -20,15 +20,4 @@ export class OneCXIamKcSvcContainer extends OneCXSvcContainer {
       QUARKUS_KEYCLOAK_ADMIN_CLIENT_PASSWORD: `${this.getOneCXKeycloakContainer().getOneCXAdminPassword()}`
     })
   }
-
-  async start(): Promise<StartedOneCXIamKcSvcContainer> {
-    return new StartedOneCXIamKcSvcContainer(
-      await super.start(),
-      this.getOneCXAppType(),
-      this.getOneCXApplicationName(),
-      this.getOneCXAlias()
-    )
-  }
 }
-
-export class StartedOneCXIamKcSvcContainer extends StartedOneCXSvcContainer {}

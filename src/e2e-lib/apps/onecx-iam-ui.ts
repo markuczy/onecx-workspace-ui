@@ -4,7 +4,7 @@ import { commonEnv } from '../constants/e2e-config'
 
 export class OneCXIamUiContainer extends OneCXUiContainer {
   constructor(image: string, network: StartedNetwork) {
-    super(image, 'onecx-iam-ui', 'iam', network)
+    super(image, 'onecx-iam-ui', 'iam', 'iam-ui', network)
 
     this.withOneCXEnvironment({
       ...this.getOneCXEnvironment(),
@@ -14,15 +14,4 @@ export class OneCXIamUiContainer extends OneCXUiContainer {
       PRODUCT_NAME: 'onecx-iam'
     })
   }
-
-  async start(): Promise<StartedOneCXIamUiContainer> {
-    return new StartedOneCXIamUiContainer(
-      await super.start(),
-      this.getOneCXAppType(),
-      this.getOneCXApplicationName(),
-      this.getOneCXAlias()
-    )
-  }
 }
-
-export class StartedOneCXIamUiContainer extends StartedOneCXUiContainer {}

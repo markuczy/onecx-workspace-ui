@@ -1,6 +1,5 @@
 export const baseOneCXRepo = 'ghcr.io/onecx'
 
-// TODO: Allow possibility to override OneCX image versions
 export const containerImagesEnv = {
   POSTGRES: 'docker.io/library/postgres:13.4',
   KEYCLOAK: 'quay.io/keycloak/keycloak:23.0.4',

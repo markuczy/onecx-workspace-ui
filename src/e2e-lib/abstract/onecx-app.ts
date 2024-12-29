@@ -3,41 +3,31 @@ import { OneCXContainer, StartedOneCXContainer } from './onecx-container'
 import { OneCXAppType } from '../model/onecx-app-type'
 import { OneCXCoreApplication } from '../model/onecx-application-type'
 
+export interface OneCXAppDetails {
+  appType: OneCXAppType
+  applicationName: OneCXCoreApplication | string
+  appId: string
+}
+
 export class OneCXAppContainer extends OneCXContainer {
-  private onecxAppType: OneCXAppType
-  private onecxApplicationName: OneCXCoreApplication | string
-  constructor(
-    image: string,
-    aliasAndName: string,
-    appType: OneCXAppType,
-    applicationName: OneCXCoreApplication | string,
-    network: StartedNetwork
-  ) {
+  private onecxAppDetails: OneCXAppDetails
+  constructor(image: string, aliasAndName: string, appDetails: OneCXAppDetails, network: StartedNetwork) {
     super(image, aliasAndName, network)
 
-    this.onecxAppType = appType
-    this.onecxApplicationName = applicationName
+    this.onecxAppDetails = appDetails
   }
 
-  public getOneCXAppType() {
-    return this.onecxAppType
-  }
-
-  public getOneCXApplicationName() {
-    return this.onecxApplicationName
-  }
-
-  public withOnecxApplicationName(applicationName: string) {
-    this.onecxApplicationName = applicationName
-    return this
+  public getOneCXAppDetails() {
+    return this.onecxAppDetails
   }
 
   public async start(): Promise<StartedOneCXAppContainer> {
     return new StartedOneCXAppContainer(
       await super.start(),
-      this.onecxAppType,
-      this.onecxApplicationName,
-      this.getOneCXAlias()
+      this.onecxAppDetails,
+      this.getOneCXAlias(),
+      this.getOneCXNetwork(),
+      this.getOneCXExposedPort()
     )
   }
 }
@@ -45,18 +35,23 @@ export class OneCXAppContainer extends OneCXContainer {
 export class StartedOneCXAppContainer extends StartedOneCXContainer {
   constructor(
     startedTestContainer: StartedTestContainer,
-    private readonly onecxAppType: OneCXAppType,
-    private readonly onecxApplicationName: OneCXCoreApplication | string,
-    alias: string
+    private readonly onecxAppDetails: OneCXAppDetails,
+    alias: string,
+    network: StartedNetwork,
+    exposedPort: number | undefined
   ) {
-    super(startedTestContainer, alias)
+    super(startedTestContainer, alias, network, exposedPort)
   }
 
   public getOneCXAppType() {
-    return this.onecxAppType
+    return this.onecxAppDetails.appType
   }
 
   public getOneCXApplicationName() {
-    return this.onecxApplicationName
+    return this.onecxAppDetails.applicationName
+  }
+
+  public getOneCXAppId() {
+    return this.onecxAppDetails.appId
   }
 }

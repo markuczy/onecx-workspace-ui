@@ -2,7 +2,7 @@ import { StartedNetwork } from 'testcontainers'
 import { OneCXSvcContainer, StartedOneCXSvcContainer } from '../abstract/onecx-svc'
 import { StartedOneCXPostgresContainer } from '../core/onecx-postgres'
 import { StartedOneCXKeycloakContainer } from '../core/onecx-keycloak'
-import { StartedOneCXTenantSvcContainer } from './onecx-tenant-svc'
+import { OneCXTenantSvcContainer, StartedOneCXTenantSvcContainer } from './onecx-tenant-svc'
 
 export class OneCXPermissionSvcContainer extends OneCXSvcContainer {
   constructor(
@@ -10,9 +10,9 @@ export class OneCXPermissionSvcContainer extends OneCXSvcContainer {
     network: StartedNetwork,
     databaseContainer: StartedOneCXPostgresContainer,
     keycloakContainer: StartedOneCXKeycloakContainer,
-    tenantContainer: StartedOneCXTenantSvcContainer
+    tenantContainer: StartedOneCXTenantSvcContainer | OneCXTenantSvcContainer
   ) {
-    super(image, 'onecx-permission-svc', 'permission', network, databaseContainer, keycloakContainer)
+    super(image, 'onecx-permission-svc', 'permission', 'permission-svc', network, databaseContainer, keycloakContainer)
 
     this.withOneCXNameAndAlias('onecx-permission-svc').withOneCXEnvironment({
       ...this.getOneCXEnvironment(),
@@ -24,15 +24,4 @@ export class OneCXPermissionSvcContainer extends OneCXSvcContainer {
       TKIT_RS_CONTEXT_TENANT_ID_ENABLED: 'false'
     })
   }
-
-  async start(): Promise<StartedOneCXPermissionSvcContainer> {
-    return new StartedOneCXPermissionSvcContainer(
-      await super.start(),
-      this.getOneCXAppType(),
-      this.getOneCXApplicationName(),
-      this.getOneCXAlias()
-    )
-  }
 }
-
-export class StartedOneCXPermissionSvcContainer extends StartedOneCXSvcContainer {}

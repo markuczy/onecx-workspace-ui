@@ -4,7 +4,7 @@ import { commonEnv } from '../constants/e2e-config'
 
 export class OneCXThemeUiContainer extends OneCXUiContainer {
   constructor(image: string, network: StartedNetwork) {
-    super(image, 'onecx-theme-ui', 'theme', network)
+    super(image, 'onecx-theme-ui', 'theme', 'theme-ui', network)
 
     this.withOneCXEnvironment({
       ...this.getOneCXEnvironment(),
@@ -14,15 +14,4 @@ export class OneCXThemeUiContainer extends OneCXUiContainer {
       PRODUCT_NAME: 'onecx-theme'
     })
   }
-
-  async start(): Promise<StartedOneCXThemeUiContainer> {
-    return new StartedOneCXThemeUiContainer(
-      await super.start(),
-      this.getOneCXAppType(),
-      this.getOneCXApplicationName(),
-      this.getOneCXAlias()
-    )
-  }
 }
-
-export class StartedOneCXThemeUiContainer extends StartedOneCXUiContainer {}

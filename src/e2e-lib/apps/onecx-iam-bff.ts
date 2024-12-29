@@ -3,22 +3,11 @@ import { OneCXBffContainer, StartedOneCXBffContainer } from '../abstract/onecx-b
 
 export class OneCXIamBffContainer extends OneCXBffContainer {
   constructor(image: string, network: StartedNetwork) {
-    super(image, 'onecx-iam-bff', 'iam', network)
+    super(image, 'onecx-iam-bff', 'iam', 'iam-bff', network)
 
     this.withOneCXEnvironment({
       ...this.getOneCXEnvironment(),
       ONECX_PERMISSIONS_PRODUCT_NAME: 'onecx-iam'
     })
   }
-
-  async start(): Promise<StartedOneCXIamBffContainer> {
-    return new StartedOneCXIamBffContainer(
-      await super.start(),
-      this.getOneCXAppType(),
-      this.getOneCXApplicationName(),
-      this.getOneCXAlias()
-    )
-  }
 }
-
-export class StartedOneCXIamBffContainer extends StartedOneCXBffContainer {}

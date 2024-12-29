@@ -10,11 +10,21 @@ export class OneCXSvcContainer extends OneCXAppContainer {
     image: string,
     aliasAndName: string,
     applicationName: OneCXCoreApplication | string,
+    appId: string,
     network: StartedNetwork,
     private readonly databaseContainer: StartedOneCXPostgresContainer,
     private readonly keycloakContainer: StartedOneCXKeycloakContainer
   ) {
-    super(image, aliasAndName, 'SVC', applicationName, network)
+    super(
+      image,
+      aliasAndName,
+      {
+        appId: appId,
+        applicationName: applicationName,
+        appType: 'SVC'
+      },
+      network
+    )
 
     this.withOneCXEnvironment({
       ...this.getOneCXEnvironment(),
@@ -36,15 +46,6 @@ export class OneCXSvcContainer extends OneCXAppContainer {
 
   public getOneCXKeycloakContainer() {
     return this.keycloakContainer
-  }
-
-  public async start(): Promise<StartedOneCXSvcContainer> {
-    return new StartedOneCXSvcContainer(
-      await super.start(),
-      this.getOneCXAppType(),
-      this.getOneCXApplicationName(),
-      this.getOneCXAlias()
-    )
   }
 }
 

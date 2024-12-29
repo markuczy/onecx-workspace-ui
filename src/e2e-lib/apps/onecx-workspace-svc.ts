@@ -10,7 +10,7 @@ export class OneCXWorkspaceSvcContainer extends OneCXSvcContainer {
     databaseContainer: StartedOneCXPostgresContainer,
     keycloakContainer: StartedOneCXKeycloakContainer
   ) {
-    super(image, 'onecx-workspace-svc', 'workspace', network, databaseContainer, keycloakContainer)
+    super(image, 'onecx-workspace-svc', 'workspace', 'workspace-svc', network, databaseContainer, keycloakContainer)
 
     this.withOneCXEnvironment({
       ...this.getOneCXEnvironment(),
@@ -20,15 +20,4 @@ export class OneCXWorkspaceSvcContainer extends OneCXSvcContainer {
       TKIT_RS_CONTEXT_TENANT_ID_ENABLED: 'false'
     })
   }
-
-  async start(): Promise<StartedOneCXWorkspaceSvcContainer> {
-    return new StartedOneCXWorkspaceSvcContainer(
-      await super.start(),
-      this.getOneCXAppType(),
-      this.getOneCXApplicationName(),
-      this.getOneCXAlias()
-    )
-  }
 }
-
-export class StartedOneCXWorkspaceSvcContainer extends StartedOneCXSvcContainer {}

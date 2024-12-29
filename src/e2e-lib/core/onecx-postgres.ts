@@ -47,13 +47,23 @@ export class OneCXPostgresContainer extends OneCXContainer {
       ])
     }
 
-    return new StartedOneCXPostgresContainer(await super.start(), this.getOneCXAlias())
+    return new StartedOneCXPostgresContainer(
+      await super.start(),
+      this.getOneCXAlias(),
+      this.getOneCXNetwork(),
+      this.getOneCXExposedPort()
+    )
   }
 }
 
 export class StartedOneCXPostgresContainer extends StartedOneCXContainer {
-  constructor(startedTestContainer: StartedTestContainer, alias: string) {
-    super(startedTestContainer, alias)
+  constructor(
+    startedTestContainer: StartedTestContainer,
+    alias: string,
+    network: StartedNetwork,
+    exposedPort: number | undefined
+  ) {
+    super(startedTestContainer, alias, network, exposedPort)
   }
 
   public async getOneCXDatabases(): Promise<string[]> {

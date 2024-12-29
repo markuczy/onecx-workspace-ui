@@ -5,7 +5,7 @@ import { StartedOneCXKeycloakContainer } from './onecx-keycloak'
 
 export class OneCXShellUiContainer extends OneCXUiContainer {
   constructor(image: string, network: StartedNetwork, keycloakContainer: StartedOneCXKeycloakContainer) {
-    super(image, 'onecx-shell-ui', 'shell', network)
+    super(image, 'onecx-shell-ui', 'shell', 'shell-ui', network)
 
     this.withOneCXEnvironment({
       ...this.getOneCXEnvironment(),
@@ -19,15 +19,4 @@ export class OneCXShellUiContainer extends OneCXUiContainer {
       CLIENT_USER_ID: 'onecx-shell-ui-client'
     })
   }
-
-  async start(): Promise<StartedOneCXShellUiContainer> {
-    return new StartedOneCXShellUiContainer(
-      await super.start(),
-      this.getOneCXAppType(),
-      this.getOneCXApplicationName(),
-      this.getOneCXAlias()
-    )
-  }
 }
-
-export class StartedOneCXShellUiContainer extends StartedOneCXUiContainer {}

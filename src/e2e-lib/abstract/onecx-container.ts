@@ -2,7 +2,7 @@ import { AbstractStartedContainer, GenericContainer, StartedNetwork, StartedTest
 import { HealthCheck } from 'testcontainers/build/types'
 import { ContainerEnv } from '../model/container-env'
 
-// TODO: Option to configure the log consumer?
+// TODO: Configure log consumer
 export class OneCXContainer extends GenericContainer {
   private onecxEnv: ContainerEnv | undefined
   private onecxHealthCheck: HealthCheck | undefined
@@ -78,7 +78,7 @@ export class OneCXContainer extends GenericContainer {
       stream.on('end', () => console.log(`${this.onecxNameAndAlias}: Stream closed`))
     })
 
-    return new StartedOneCXContainer(await super.start(), this.onecxNameAndAlias, this.onecxExposedPort)
+    return new StartedOneCXContainer(await super.start(), this.onecxNameAndAlias, this.network, this.onecxExposedPort)
   }
 
   private log(message: string) {
@@ -94,11 +94,10 @@ export class StartedOneCXContainer extends AbstractStartedContainer {
   constructor(
     startedTestContainer: StartedTestContainer,
     private readonly onecxAlias: string,
+    private readonly network: StartedNetwork,
     private readonly onecxExposedPort?: number
   ) {
     super(startedTestContainer)
-
-    this.log('Started container')
   }
 
   public getOneCXAlias() {

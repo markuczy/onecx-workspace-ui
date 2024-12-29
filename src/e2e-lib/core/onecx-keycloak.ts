@@ -3,13 +3,22 @@ import { commonEnv } from '../constants/e2e-config'
 import { OneCXContainer, StartedOneCXContainer } from '../abstract/onecx-container'
 import { StartedOneCXPostgresContainer } from './onecx-postgres'
 
+export interface OneCXKeycloakDetails {
+  onecxRealm: string
+  adminRealm: string
+  adminUsername: string
+  adminPassword: string
+}
+
 export class OneCXKeycloakContainer extends OneCXContainer {
   private onecxStartCommand: string[]
-  private onecxRealm: string
-  private onecxStartTimeout: number
-  private onecxAdminRealm = 'master'
-  private onecxAdminUsername = 'admin'
-  private onecxAdminPassword = 'admin'
+  private onecxKeycloakDetails: OneCXKeycloakDetails = {
+    onecxRealm: commonEnv.KC_REALM,
+    adminRealm: 'master',
+    adminUsername: 'admin',
+    adminPassword: 'admin'
+  }
+  private onecxStartTimeout: number = 100_000
 
   constructor(
     image: string,
@@ -22,7 +31,6 @@ export class OneCXKeycloakContainer extends OneCXContainer {
     super(image, alias, network)
 
     this.withOneCXRealm(commonEnv.KC_REALM)
-      .withStartupTimeout(100_000)
       .withOneCXEnvironment({
         KEYCLOAK_ADMIN: 'admin',
         KEYCLOAK_ADMIN_PASSWORD: 'admin',
@@ -67,26 +75,26 @@ export class OneCXKeycloakContainer extends OneCXContainer {
   }
 
   public withOneCXRealm(realm: string) {
-    this.onecxRealm = realm
+    this.onecxKeycloakDetails.onecxRealm = realm
     return this
   }
 
   public getOneCXRealm() {
-    return this.onecxRealm
+    return this.onecxKeycloakDetails.onecxRealm
   }
 
   public withOneCXAdminRealm(realm: string) {
-    this.onecxAdminRealm = realm
+    this.onecxKeycloakDetails.adminRealm = realm
     return this
   }
 
   public withOneCXAdminUsername(username: string) {
-    this.onecxAdminUsername = username
+    this.onecxKeycloakDetails.adminUsername = username
     return this
   }
 
   public withOneCXAdminPassword(password: string) {
-    this.onecxAdminPassword = password
+    this.onecxKeycloakDetails.adminPassword = password
     return this
   }
 
@@ -105,10 +113,9 @@ export class OneCXKeycloakContainer extends OneCXContainer {
     return new StartedOneCXKeycloakContainer(
       await super.start(),
       this.getOneCXAlias(),
-      this.onecxRealm,
-      this.onecxAdminRealm,
-      this.onecxAdminUsername,
-      this.onecxAdminPassword
+      this.getOneCXNetwork(),
+      this.onecxKeycloakDetails,
+      this.getOneCXExposedPort()
     )
   }
 }
@@ -117,27 +124,26 @@ export class StartedOneCXKeycloakContainer extends StartedOneCXContainer {
   constructor(
     startedTestContainer: StartedTestContainer,
     alias: string,
-    private readonly onecxRealm: string,
-    private readonly onecxAdminRealm: string,
-    private readonly onecxAdminUsername: string,
-    private readonly onecxAdminPassword: string
+    network: StartedNetwork,
+    private readonly onecxKeycloakDetails: OneCXKeycloakDetails,
+    exposedPort: number | undefined
   ) {
-    super(startedTestContainer, alias)
+    super(startedTestContainer, alias, network, exposedPort)
   }
 
   public getOneCXRealm() {
-    return this.onecxRealm
+    return this.onecxKeycloakDetails.onecxRealm
   }
 
   public getOneCXAdminRealm() {
-    return this.onecxAdminRealm
+    return this.onecxKeycloakDetails.adminRealm
   }
 
   public getOneCXAdminUsername() {
-    return this.onecxAdminUsername
+    return this.onecxKeycloakDetails.adminUsername
   }
 
   public getOneCXAdminPassword() {
-    return this.onecxAdminPassword
+    return this.onecxKeycloakDetails.adminPassword
   }
 }

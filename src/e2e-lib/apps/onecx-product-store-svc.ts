@@ -10,7 +10,15 @@ export class OneCXProductStoreSvcContainer extends OneCXSvcContainer {
     databaseContainer: StartedOneCXPostgresContainer,
     keycloakContainer: StartedOneCXKeycloakContainer
   ) {
-    super(image, 'onecx-product-store-svc', 'product-store', network, databaseContainer, keycloakContainer)
+    super(
+      image,
+      'onecx-product-store-svc',
+      'product-store',
+      'product-store-svc',
+      network,
+      databaseContainer,
+      keycloakContainer
+    )
 
     this.withOneCXEnvironment({
       ...this.getOneCXEnvironment(),
@@ -19,15 +27,4 @@ export class OneCXProductStoreSvcContainer extends OneCXSvcContainer {
       QUARKUS_DATASOURCE_JDBC_URL: `jdbc:postgresql://${this.getOneCXDatabaseContainer().getOneCXAlias()}:${this.getOneCXDatabaseContainer().getOneCXExposedPort()}/onecx_product_store?sslmode=disable`
     })
   }
-
-  async start(): Promise<StartedOneCXProductStoreSvcContainer> {
-    return new StartedOneCXProductStoreSvcContainer(
-      await super.start(),
-      this.getOneCXAppType(),
-      this.getOneCXApplicationName(),
-      this.getOneCXAlias()
-    )
-  }
 }
-
-export class StartedOneCXProductStoreSvcContainer extends StartedOneCXSvcContainer {}
