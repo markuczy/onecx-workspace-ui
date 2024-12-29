@@ -136,6 +136,7 @@ async function runTests() {
     exit(1)
   }
 
+  let testResult: 'success' | 'fail' = 'success'
   console.log('starting e2e tests')
   let cypressContainer: StartedTestContainer | undefined
   try {
@@ -147,10 +148,12 @@ async function runTests() {
       `SHELL_ADDRESS=${shellUiContainer.getOneCXAlias()}:${shellUiContainer.getOneCXExposedPort()},KEYCLOAK_ADDRESS=${oneCXBaseEnv.getOneCXKeycloak().getOneCXAlias()}:${oneCXBaseEnv.getOneCXKeycloak().getOneCXExposedPort()}`
     ])
 
-    console.log(`TESTS stdout: ${testExec.stdout}`)
-    console.log(`TESTS exitCode: ${testExec.exitCode}`)
-    console.log(`TESTS stderr: ${testExec.stderr}`)
-    console.log(`TESTS output: ${testExec.output}`)
+    if (testExec.exitCode != 0) testResult = 'fail'
+
+    // console.log(`TESTS stdout: ${testExec.stdout}`)
+    // console.log(`TESTS exitCode: ${testExec.exitCode}`)
+    // console.log(`TESTS stderr: ${testExec.stderr}`)
+    // console.log(`TESTS output: ${testExec.output}`)
 
     console.log('finishing e2e tests')
   } catch (error) {
@@ -186,6 +189,8 @@ async function runTests() {
     }
     await oneCXBaseEnv.teardown()
   }
+
+  exit(testResult === 'success' ? 0 : 1)
 }
 
 runTests().catch((err) => console.error(err))
