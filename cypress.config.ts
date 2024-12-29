@@ -1,12 +1,12 @@
 import { defineConfig } from 'cypress'
 
+import { getPreprocessorConfig } from '@jscutlery/cypress-harness/preprocessor-config'
+
 export default defineConfig({
   e2e: {
-    setupNodeEvents(on, config) {
-      // implement node event listeners here
-    },
-    supportFile: false,
-    specPattern: 'e2e-tests/cypress/e2e/**/*.cy.{js,jsx,ts,tsx}'
+    supportFile: 'e2e-tests/cypress/support/index.js',
+    specPattern: 'e2e-tests/cypress/e2e/**/*.cy.{js,jsx,ts,tsx}',
+    ...getPreprocessorConfig()
   },
   screenshotsFolder: 'e2e-tests/cypress/screenshots'
 })

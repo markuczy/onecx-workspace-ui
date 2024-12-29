@@ -150,7 +150,7 @@ async function runTests() {
 
     if (testExec.exitCode != 0) testResult = 'fail'
 
-    // console.log(`TESTS stdout: ${testExec.stdout}`)
+    console.log(`TESTS stdout: ${testExec.stdout}`)
     // console.log(`TESTS exitCode: ${testExec.exitCode}`)
     // console.log(`TESTS stderr: ${testExec.stderr}`)
     // console.log(`TESTS output: ${testExec.output}`)
