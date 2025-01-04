@@ -1,14 +1,11 @@
-import { StartedNetwork } from 'testcontainers'
-import { OneCXUiContainer, StartedOneCXUiContainer } from '../abstract/onecx-ui'
-import { commonEnv } from '../constants/e2e-config'
+import { OneCXUiContainer, OneCXUiContainerServices } from '../abstract/onecx-ui'
 
 export class OneCXTenantUiContainer extends OneCXUiContainer {
-  constructor(image: string, network: StartedNetwork) {
-    super(image, 'onecx-tenant-ui', 'tenant', 'tenant-ui', network)
+  constructor(image: string, services: OneCXUiContainerServices) {
+    super(image, { nameAndAlias: 'onecx-tenant-ui', applicationName: 'tenant', appId: 'tenant-ui' }, services)
 
     this.withOneCXEnvironment({
       ...this.getOneCXEnvironment(),
-      ...commonEnv,
       APP_BASE_HREF: '/mfe/tenant/',
       APP_ID: 'onecx-tenant-ui',
       PRODUCT_NAME: 'onecx-tenant'

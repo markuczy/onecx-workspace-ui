@@ -29,6 +29,15 @@ export class OneCXAppSet<T extends OneCXAppContainer> {
     )
   }
 
+  get(app: T): T | undefined {
+    return this.appList.find(
+      (otherApp) =>
+        app.getOneCXAppDetails().appId === otherApp.getOneCXAppDetails().appId &&
+        app.getOneCXAppDetails().appType === otherApp.getOneCXAppDetails().appType &&
+        app.getOneCXAppDetails().applicationName === otherApp.getOneCXAppDetails().applicationName
+    )
+  }
+
   values(): Array<T> {
     return this.appList
   }

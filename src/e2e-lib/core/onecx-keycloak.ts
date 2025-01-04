@@ -23,7 +23,7 @@ export class OneCXKeycloakContainer extends OneCXContainer {
   constructor(
     image: string,
     network: StartedNetwork,
-    databaseContainer: StartedOneCXPostgresContainer,
+    private readonly databaseContainer: StartedOneCXPostgresContainer,
     private readonly initDataPath?: string
   ) {
     const alias = 'keycloak-app'
@@ -32,8 +32,8 @@ export class OneCXKeycloakContainer extends OneCXContainer {
 
     this.withOneCXRealm(commonEnv.KC_REALM)
       .withOneCXEnvironment({
-        KEYCLOAK_ADMIN: 'admin',
-        KEYCLOAK_ADMIN_PASSWORD: 'admin',
+        KEYCLOAK_ADMIN: this.onecxKeycloakDetails.adminUsername,
+        KEYCLOAK_ADMIN_PASSWORD: this.onecxKeycloakDetails.adminPassword,
         KC_DB: 'postgres',
         KC_DB_POOL_INITIAL_SIZE: '1',
         KC_DB_POOL_MAX_SIZE: '5',
@@ -59,6 +59,22 @@ export class OneCXKeycloakContainer extends OneCXContainer {
       })
       .withOneCXStartCommand(['start-dev', '--import-realm'])
       .withOneCXExposedPort(port)
+  }
+
+  public withOneCXNameAndAlias(nameAndAlias: string): this {
+    super.withOneCXNameAndAlias(nameAndAlias)
+
+    this.updateEnv()
+    return this
+  }
+
+  public withOneCXExposedPort(port: number): this {
+    super.withOneCXExposedPort(port)
+
+    this.updateEnv()
+
+    this.updateHealthCheck()
+    return this
   }
 
   public withOneCXStartCommand(startCommand: string[]) {
@@ -117,6 +133,38 @@ export class OneCXKeycloakContainer extends OneCXContainer {
       this.onecxKeycloakDetails,
       this.getOneCXExposedPort()
     )
+  }
+
+  private updateEnv() {
+    this.withOneCXEnvironment({
+      KEYCLOAK_ADMIN: this.onecxKeycloakDetails.adminUsername,
+      KEYCLOAK_ADMIN_PASSWORD: this.onecxKeycloakDetails.adminPassword,
+      KC_DB: 'postgres',
+      KC_DB_POOL_INITIAL_SIZE: '1',
+      KC_DB_POOL_MAX_SIZE: '5',
+      KC_DB_POOL_MIN_SIZE: '2',
+      KC_DB_URL_DATABASE: 'keycloak',
+      KC_DB_URL_HOST: `${this.databaseContainer.getOneCXAlias()}`,
+      KC_DB_USERNAME: 'keycloak',
+      KC_DB_PASSWORD: 'keycloak',
+      KC_HOSTNAME: `${this.getOneCXAlias()}`,
+      KC_HOSTNAME_STRICT: 'false',
+      KC_HTTP_ENABLED: 'true',
+      KC_HTTP_PORT: `${this.getOneCXExposedPort()}`,
+      KC_HEALTH_ENABLED: 'true'
+    })
+  }
+
+  private updateHealthCheck() {
+    this.withOneCXHealthCheck({
+      test: [
+        'CMD-SHELL',
+        `{ printf >&3 'GET /realms/${this.getOneCXRealm()}/.well-known/openid-configuration HTTP/1.0\\r\\nHost: localhost\\r\\n\\r\\n'; cat <&3; } 3<>/dev/tcp/localhost/${this.getOneCXExposedPort()} | head -1 | grep 200`
+      ],
+      interval: 10_000,
+      timeout: 5_000,
+      retries: 10
+    })
   }
 }
 

@@ -1,9 +1,8 @@
-import { StartedNetwork } from 'testcontainers'
-import { OneCXBffContainer } from '../abstract/onecx-bff'
+import { OneCXBffContainer, OneCXBffContainerServices } from '../abstract/onecx-bff'
 
 export class OneCXShellBffContainer extends OneCXBffContainer {
-  constructor(image: string, network: StartedNetwork) {
-    super(image, 'onecx-shell-bff', 'shell', 'shell-bff', network)
+  constructor(image: string, services: OneCXBffContainerServices) {
+    super(image, { nameAndAlias: 'onecx-shell-bff', applicationName: 'shell', appId: 'shell-bff' }, services)
 
     this.withOneCXHealthCheck({
       test: ['CMD-SHELL', `curl --head -fsS http://localhost:8080/q/health`],

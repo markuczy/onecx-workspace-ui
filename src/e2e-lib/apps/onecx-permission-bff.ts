@@ -1,9 +1,12 @@
-import { StartedNetwork } from 'testcontainers'
-import { OneCXBffContainer, StartedOneCXBffContainer } from '../abstract/onecx-bff'
+import { OneCXBffContainer, OneCXBffContainerServices } from '../abstract/onecx-bff'
 
 export class OneCXPermissionBffContainer extends OneCXBffContainer {
-  constructor(image: string, network: StartedNetwork) {
-    super(image, 'onecx-permission-bff', 'permission', 'permission-bff', network)
+  constructor(image: string, services: OneCXBffContainerServices) {
+    super(
+      image,
+      { nameAndAlias: 'onecx-permission-bff', applicationName: 'permission', appId: 'permission-bff' },
+      services
+    )
 
     this.withOneCXEnvironment({
       ...this.getOneCXEnvironment(),

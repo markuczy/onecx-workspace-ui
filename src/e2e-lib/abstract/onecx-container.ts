@@ -10,23 +10,27 @@ export class OneCXContainer extends GenericContainer {
 
   constructor(
     image: string,
-    private onecxNameAndAlias: string,
+    private nameAndAlias: string,
     private readonly network: StartedNetwork
   ) {
     super(image)
   }
 
   public withOneCXNameAndAlias(nameAndAlias: string) {
-    this.onecxNameAndAlias = nameAndAlias
+    this.nameAndAlias = nameAndAlias
     return this
   }
 
+  public getOneCXNameAndAlias() {
+    return this.nameAndAlias
+  }
+
   public getOneCXName() {
-    return this.onecxNameAndAlias
+    return this.nameAndAlias
   }
 
   public getOneCXAlias() {
-    return this.onecxNameAndAlias
+    return this.nameAndAlias
   }
 
   public withOneCXEnvironment(env: ContainerEnv) {
@@ -63,9 +67,9 @@ export class OneCXContainer extends GenericContainer {
   public async start(): Promise<StartedOneCXContainer> {
     this.log('Starting container')
 
-    this.onecxNameAndAlias &&
-      this.withName(this.onecxNameAndAlias)
-        .withNetworkAliases(this.onecxNameAndAlias)
+    this.nameAndAlias &&
+      this.withName(this.nameAndAlias)
+        .withNetworkAliases(this.nameAndAlias)
         .withEnvironment(this.onecxEnv ?? {})
 
     this.onecxHealthCheck && this.withHealthCheck(this.onecxHealthCheck).withWaitStrategy(Wait.forHealthCheck())
@@ -73,20 +77,20 @@ export class OneCXContainer extends GenericContainer {
     this.onecxExposedPort && this.withExposedPorts(this.onecxExposedPort)
 
     this.withNetwork(this.network).withLogConsumer((stream) => {
-      stream.on('data', (line) => console.log(`${this.onecxNameAndAlias}: `, line))
-      stream.on('err', (line) => console.error(`${this.onecxNameAndAlias}: `, line))
-      stream.on('end', () => console.log(`${this.onecxNameAndAlias}: Stream closed`))
+      stream.on('data', (line) => console.log(`${this.nameAndAlias}: `, line))
+      stream.on('err', (line) => console.error(`${this.nameAndAlias}: `, line))
+      stream.on('end', () => console.log(`${this.nameAndAlias}: Stream closed`))
     })
 
-    return new StartedOneCXContainer(await super.start(), this.onecxNameAndAlias, this.network, this.onecxExposedPort)
+    return new StartedOneCXContainer(await super.start(), this.nameAndAlias, this.network, this.onecxExposedPort)
   }
 
-  private log(message: string) {
-    console.log(`${this.onecxNameAndAlias ?? this.imageName}: ${message}`)
+  protected log(message: string) {
+    console.log(`${this.nameAndAlias ?? this.imageName}: ${message}`)
   }
 
-  private error(message: string) {
-    console.error(`${this.onecxNameAndAlias ?? this.imageName}: ${message}`)
+  protected error(message: string) {
+    console.error(`${this.nameAndAlias ?? this.imageName}: ${message}`)
   }
 }
 
@@ -94,7 +98,7 @@ export class StartedOneCXContainer extends AbstractStartedContainer {
   constructor(
     startedTestContainer: StartedTestContainer,
     private readonly onecxAlias: string,
-    private readonly network: StartedNetwork,
+    private readonly onecxNetwork: StartedNetwork,
     private readonly onecxExposedPort?: number
   ) {
     super(startedTestContainer)
@@ -108,11 +112,15 @@ export class StartedOneCXContainer extends AbstractStartedContainer {
     return this.onecxExposedPort
   }
 
-  private log(message: string) {
+  public getOneCXNetwork() {
+    return this.onecxNetwork
+  }
+
+  protected log(message: string) {
     console.log(`${this.onecxAlias ?? this.getName()}: ${message}`)
   }
 
-  private error(message: string) {
+  protected error(message: string) {
     console.error(`${this.onecxAlias ?? this.getName()}: ${message}`)
   }
 }

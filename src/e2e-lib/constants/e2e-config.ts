@@ -49,11 +49,8 @@ export const containerImagesEnv = {
 }
 
 export const commonEnv = {
-  // TODO: This data should base on keycloak current configuration
   KC_REALM: 'onecx',
-  // TODO: This data should base on keycloak current configuration
   QUARKUS_OIDC_AUTH_SERVER_URL: 'http://keycloak-app:8080/realms/onecx',
-  // TODO: This data should base on keycloak current configuration
   QUARKUS_OIDC_TOKEN_ISSUER: 'http://keycloak-app:8080/realms/onecx',
   TKIT_SECURITY_AUTH_ENABLED: 'false',
   'TKIT_RS_CONTEXT_TENANT-ID_MOCK_ENABLED': 'false',

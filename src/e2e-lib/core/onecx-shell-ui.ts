@@ -1,20 +1,16 @@
-import { StartedNetwork } from 'testcontainers'
-import { OneCXUiContainer, StartedOneCXUiContainer } from '../abstract/onecx-ui'
-import { commonEnv } from '../constants/e2e-config'
-import { StartedOneCXKeycloakContainer } from './onecx-keycloak'
+import { OneCXUiContainer, OneCXUiContainerServices } from '../abstract/onecx-ui'
 
 export class OneCXShellUiContainer extends OneCXUiContainer {
-  constructor(image: string, network: StartedNetwork, keycloakContainer: StartedOneCXKeycloakContainer) {
-    super(image, 'onecx-shell-ui', 'shell', 'shell-ui', network)
+  constructor(image: string, services: OneCXUiContainerServices) {
+    super(image, { nameAndAlias: 'onecx-shell-ui', applicationName: 'shell', appId: 'shell-ui' }, services)
 
     this.withOneCXEnvironment({
       ...this.getOneCXEnvironment(),
-      ...commonEnv,
       ONECX_PERMISSIONS_ENABLED: 'false',
       ONECX_PERMISSIONS_CACHE_ENABLED: 'false',
       ONECX_PERMISSIONS_PRODUCT_NAME: 'onecx-shell',
       APP_BASE_HREF: '/onecx-shell/',
-      KEYCLOAK_URL: `http://${keycloakContainer.getOneCXAlias()}:${keycloakContainer.getOneCXExposedPort()}`,
+      KEYCLOAK_URL: `http://${services.keycloakContainer.getOneCXAlias()}:${services.keycloakContainer.getOneCXExposedPort()}`,
       ONECX_VAR_REMAP: 'KEYCLOAK_REALM=KC_REALM;KEYCLOAK_CLIENT_ID=CLIENT_USER_ID',
       CLIENT_USER_ID: 'onecx-shell-ui-client'
     })

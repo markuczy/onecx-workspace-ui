@@ -11,8 +11,8 @@ export interface OneCXAppDetails {
 
 export class OneCXAppContainer extends OneCXContainer {
   private onecxAppDetails: OneCXAppDetails
-  constructor(image: string, aliasAndName: string, appDetails: OneCXAppDetails, network: StartedNetwork) {
-    super(image, aliasAndName, network)
+  constructor(image: string, nameAndAlias: string, appDetails: OneCXAppDetails, network: StartedNetwork) {
+    super(image, nameAndAlias, network)
 
     this.onecxAppDetails = appDetails
   }
@@ -36,11 +36,11 @@ export class StartedOneCXAppContainer extends StartedOneCXContainer {
   constructor(
     startedTestContainer: StartedTestContainer,
     private readonly onecxAppDetails: OneCXAppDetails,
-    alias: string,
-    network: StartedNetwork,
-    exposedPort: number | undefined
+    onecxAlias: string,
+    onecxNetwork: StartedNetwork,
+    onecxExposedPort: number | undefined
   ) {
-    super(startedTestContainer, alias, network, exposedPort)
+    super(startedTestContainer, onecxAlias, onecxNetwork, onecxExposedPort)
   }
 
   public getOneCXAppType() {

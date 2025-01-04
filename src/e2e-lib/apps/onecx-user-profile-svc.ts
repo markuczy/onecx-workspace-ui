@@ -1,23 +1,11 @@
-import { StartedNetwork } from 'testcontainers'
-import { OneCXSvcContainer, StartedOneCXSvcContainer } from '../abstract/onecx-svc'
-import { StartedOneCXPostgresContainer } from '../core/onecx-postgres'
-import { StartedOneCXKeycloakContainer } from '../core/onecx-keycloak'
+import { OneCXSvcContainer, OneCXSvcContainerServices } from '../abstract/onecx-svc'
 
 export class OneCXUserProfileSvcContainer extends OneCXSvcContainer {
-  constructor(
-    image: string,
-    network: StartedNetwork,
-    databaseContainer: StartedOneCXPostgresContainer,
-    keycloakContainer: StartedOneCXKeycloakContainer
-  ) {
+  constructor(image: string, services: OneCXSvcContainerServices) {
     super(
       image,
-      'onecx-user-profile-svc',
-      'user-profile',
-      'user-profile-svc',
-      network,
-      databaseContainer,
-      keycloakContainer
+      { nameAndAlias: 'onecx-user-profile-svc', applicationName: 'user-profile', appId: 'user-profile-svc' },
+      services
     )
 
     this.withOneCXEnvironment({

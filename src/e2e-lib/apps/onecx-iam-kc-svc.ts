@@ -1,16 +1,8 @@
-import { StartedNetwork } from 'testcontainers'
-import { OneCXSvcContainer, StartedOneCXSvcContainer } from '../abstract/onecx-svc'
-import { StartedOneCXPostgresContainer } from '../core/onecx-postgres'
-import { StartedOneCXKeycloakContainer } from '../core/onecx-keycloak'
+import { OneCXSvcContainer, OneCXSvcContainerServices } from '../abstract/onecx-svc'
 
 export class OneCXIamKcSvcContainer extends OneCXSvcContainer {
-  constructor(
-    image: string,
-    network: StartedNetwork,
-    databaseContainer: StartedOneCXPostgresContainer,
-    keycloakContainer: StartedOneCXKeycloakContainer
-  ) {
-    super(image, 'onecx-iam-kc-svc', 'iam', 'iam-kc-svc', network, databaseContainer, keycloakContainer)
+  constructor(image: string, services: OneCXSvcContainerServices) {
+    super(image, { nameAndAlias: 'onecx-iam-kc-svc', applicationName: 'iam', appId: 'iam-kc-svc' }, services)
 
     this.withOneCXEnvironment({
       ...this.getOneCXEnvironment(),

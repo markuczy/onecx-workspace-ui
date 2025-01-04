@@ -1,13 +1,14 @@
-import { GenericContainer, Network, StartedNetwork, StartedTestContainer } from 'testcontainers'
+import { GenericContainer, StartedNetwork, StartedTestContainer } from 'testcontainers'
 import * as path from 'path'
 import * as fs from 'fs'
 import { exit } from 'process'
-import { OneCXBaseEnvironment, StartedOneCXBaseEnvironment } from './e2e-lib/core/onecx-base-environment'
+import { OneCXEnvironment } from './e2e-lib/core/onecx-base-environment'
 import { OneCXWorkspaceBffContainer } from './e2e-lib/apps/onecx-workspace-bff'
 import { OneCXWorkspaceUiContainer } from './e2e-lib/apps/onecx-workspace-ui'
 import { containerImagesEnv } from './e2e-lib/constants/e2e-config'
 import { exec } from 'child_process'
 import { ContainerStartError } from './e2e-lib/model/container-start-error'
+import { StartedOneCXKeycloakContainer } from './e2e-lib/core/onecx-keycloak'
 
 // // depends on themeSvc
 // const themeBffContainer = await new OneCXThemeBffContainer(containerImagesEnv.ONECX_THEME_BFF, network).start()
@@ -97,68 +98,93 @@ async function setupCypressContainer(network: StartedNetwork) {
   return cypressContainer
 }
 
-function setupWorkspaceBff(network: StartedNetwork) {
-  return new OneCXWorkspaceBffContainer(containerImagesEnv.ONECX_WORKSPACE_BFF, network)
+function setupWorkspaceBff(network: StartedNetwork, keycloakContainer: StartedOneCXKeycloakContainer) {
+  return new OneCXWorkspaceBffContainer(containerImagesEnv.ONECX_WORKSPACE_BFF, {
+    network,
+    keycloakContainer
+  })
 }
 
-function setupWorkspaceUi(network: StartedNetwork) {
-  return new OneCXWorkspaceUiContainer(containerImagesEnv.ONECX_WORKSPACE_UI, network)
+function setupWorkspaceUi(network: StartedNetwork, keycloakContainer: StartedOneCXKeycloakContainer) {
+  return new OneCXWorkspaceUiContainer(containerImagesEnv.ONECX_WORKSPACE_UI, { network, keycloakContainer })
 }
 
 async function runTests() {
-  const network = await new Network().start()
-  if (!network) {
-    console.error('Network set up failed')
-    exit(1)
-  }
-
-  const workspaceBff = setupWorkspaceBff(network)
-  const workspaceUi = setupWorkspaceUi(network)
-
-  let oneCXBaseEnv: StartedOneCXBaseEnvironment
+  // let oneCXEnv: OneCXEnvironment = new OneCXEnvironment().withOneCXNameAndAliasPrefix('workspace-e2e')
+  let oneCXEnv: OneCXEnvironment = new OneCXEnvironment()
   try {
-    oneCXBaseEnv = await new OneCXBaseEnvironment({})
-      .withOneCXNetwork(network)
-      .withOneCXBff(workspaceBff)
-      .withOneCXUi(workspaceUi)
-      .start()
+    // Prepare core containers and network
+    oneCXEnv = await oneCXEnv.startNetwork()
+    oneCXEnv = await oneCXEnv.startDatabase()
+    oneCXEnv = await oneCXEnv.startKeycloak()
   } catch (e) {
     if (e instanceof ContainerStartError) {
-      console.error(`Error while creating base environment: ${e.message}. Caused by: ${e.cause}`)
+      console.error(`Error while starting core environment and network: ${e.message}. Caused by: ${e.cause}`)
     }
     exit(1)
   }
 
-  const shellUiContainer = oneCXBaseEnv.getOneCXShellUi()
-  if (!shellUiContainer) {
-    console.error('Shell UI is not defined.')
-    await oneCXBaseEnv.teardown()
+  const network = oneCXEnv.getOneCXNetwork()
+  const db = oneCXEnv.getOneCXDatabase()
+  const keycloak = oneCXEnv.getOneCXKeycloak()
+  if (!network) {
+    console.error('Network is not started.')
+    exit(1)
+  }
+  if (!db) {
+    console.error('Database is not started.')
+    exit(1)
+  }
+  if (!keycloak) {
+    console.error('Keycloak is not started.')
     exit(1)
   }
 
+  // Prepare environment with extended services definitions
+  const workspaceBff = setupWorkspaceBff(network, keycloak)
+  const workspaceUi = setupWorkspaceUi(network, keycloak)
+
+  try {
+    // Prepare applications
+    oneCXEnv = oneCXEnv.withOneCXBff(workspaceBff).withOneCXUi(workspaceUi)
+    oneCXEnv = await oneCXEnv.startApplications()
+  } catch (e) {
+    if (e instanceof ContainerStartError) {
+      console.error(`Error while starting applications: ${e.message}. Caused by: ${e.cause}`)
+    }
+    exit(1)
+  }
+
+  // Ensure Shell UI is running
+  const shellUiContainer = oneCXEnv.getOneCXShellUi()
+  if (!shellUiContainer) {
+    console.error('Shell UI is not defined.')
+    await oneCXEnv.teardown()
+    exit(1)
+  }
+
+  // Setup cypress container and run the tests
   let testResult: 'success' | 'fail' = 'success'
   console.log('starting e2e tests')
   let cypressContainer: StartedTestContainer | undefined
   try {
-    cypressContainer = await setupCypressContainer(oneCXBaseEnv.getOneCXNetwork())
+    cypressContainer = await setupCypressContainer(network)
     const testExec = await cypressContainer.exec([
       'cypress',
       'run',
       '--env',
-      `SHELL_ADDRESS=${shellUiContainer.getOneCXAlias()}:${shellUiContainer.getOneCXExposedPort()},KEYCLOAK_ADDRESS=${oneCXBaseEnv.getOneCXKeycloak().getOneCXAlias()}:${oneCXBaseEnv.getOneCXKeycloak().getOneCXExposedPort()}`
+      `SHELL_ADDRESS=${shellUiContainer.getOneCXAlias()}:${shellUiContainer.getOneCXExposedPort()},KEYCLOAK_ADDRESS=${keycloak.getOneCXAlias()}:${keycloak.getOneCXExposedPort()}`
     ])
 
     if (testExec.exitCode != 0) testResult = 'fail'
 
     console.log(`TESTS stdout: ${testExec.stdout}`)
-    // console.log(`TESTS exitCode: ${testExec.exitCode}`)
-    // console.log(`TESTS stderr: ${testExec.stderr}`)
-    // console.log(`TESTS output: ${testExec.output}`)
 
     console.log('finishing e2e tests')
   } catch (error) {
     console.error('Cypress tests failed', error)
   } finally {
+    // Save screenshots if cypress container is accessible
     if (cypressContainer) {
       const screenshootsStream = await cypressContainer.copyArchiveFromContainer('/e2e/e2e-tests/cypress/screenshots')
       const filePath = path.join(path.resolve('./'), 'e2e-tests/cypress/screenshots.tar')
@@ -187,7 +213,8 @@ async function runTests() {
       await cypressContainer.stop()
       console.log('Cypress container stopped')
     }
-    await oneCXBaseEnv.teardown()
+    // Cleanup environment
+    await oneCXEnv.teardown()
   }
 
   exit(testResult === 'success' ? 0 : 1)
