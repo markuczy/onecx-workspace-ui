@@ -11,6 +11,8 @@ import { ContainerStartError } from './e2e-lib/model/container-start-error'
 import { StartedOneCXKeycloakContainer } from './e2e-lib/core/onecx-keycloak'
 import { OneCXWorkspaceSvcContainer } from './e2e-lib/apps/onecx-workspace-svc'
 import { StartedOneCXPostgresContainer } from './e2e-lib/core/onecx-postgres'
+import { OneCXShellUiContainer } from './e2e-lib/core/onecx-shell-ui'
+import { OneCXThemeSvcContainer } from './e2e-lib/apps/onecx-theme-svc'
 
 // // depends on themeSvc
 // const themeBffContainer = await new OneCXThemeBffContainer(containerImagesEnv.ONECX_THEME_BFF, network).start()
@@ -123,6 +125,22 @@ function setupWorkspaceSvc(
   })
 }
 
+function setupThemeSvc(
+  network: StartedNetwork,
+  databaseContainer: StartedOneCXPostgresContainer,
+  keycloakContainer: StartedOneCXKeycloakContainer
+) {
+  return new OneCXThemeSvcContainer('ghcr.io/onecx/onecx-theme-svc:1.3.0', {
+    network,
+    databaseContainer,
+    keycloakContainer
+  })
+}
+
+function setupShellUi(network: StartedNetwork, keycloakContainer: StartedOneCXKeycloakContainer) {
+  return new OneCXShellUiContainer('ghcr.io/onecx/onecx-shell-ui:1.5.0', { network, keycloakContainer })
+}
+
 async function runTests() {
   let oneCXEnv: OneCXEnvironment = new OneCXEnvironment().withOneCXNamePrefix('workspace-e2e_')
   try {
@@ -157,10 +175,17 @@ async function runTests() {
   const workspaceBff = setupWorkspaceBff(network, keycloak)
   const workspaceUi = setupWorkspaceUi(network, keycloak)
   const workspaceSvc = setupWorkspaceSvc(network, db, keycloak)
+  const themeSvc = setupThemeSvc(network, db, keycloak)
+  const myShellUi = setupShellUi(network, keycloak)
 
   try {
     // Prepare applications
-    oneCXEnv = oneCXEnv.withOneCXBff(workspaceBff).withOneCXUi(workspaceUi).withOneCXService(workspaceSvc)
+    oneCXEnv = oneCXEnv
+      .withOneCXBff(workspaceBff)
+      .withOneCXUi(workspaceUi)
+      .withOneCXService(workspaceSvc)
+      .withOneCXService(themeSvc)
+      .withOneCXUi(myShellUi)
     oneCXEnv = await oneCXEnv.startApplications()
   } catch (e) {
     if (e instanceof ContainerStartError) {
