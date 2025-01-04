@@ -2,7 +2,11 @@ import { OneCXBffContainer, OneCXBffContainerServices } from '../abstract/onecx-
 
 export class OneCXShellBffContainer extends OneCXBffContainer {
   constructor(image: string, services: OneCXBffContainerServices) {
-    super(image, { nameAndAlias: 'onecx-shell-bff', applicationName: 'shell', appId: 'shell-bff' }, services)
+    super(
+      image,
+      { name: 'onecx-shell-bff', alias: 'onecx-shell-bff', applicationName: 'shell', appId: 'shell-bff' },
+      services
+    )
 
     this.withOneCXHealthCheck({
       test: ['CMD-SHELL', `curl --head -fsS http://localhost:8080/q/health`],

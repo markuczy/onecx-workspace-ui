@@ -8,11 +8,16 @@ export class OneCXPermissionSvcContainer extends OneCXSvcContainer {
   constructor(image: string, services: OneCXPermissionSvcContainerServices) {
     super(
       image,
-      { nameAndAlias: 'onecx-permission-svc', applicationName: 'permission', appId: 'permission-svc' },
+      {
+        name: 'onecx-permission-svc',
+        alias: 'onecx-permission-svc',
+        applicationName: 'permission',
+        appId: 'permission-svc'
+      },
       services
     )
 
-    this.withOneCXNameAndAlias('onecx-permission-svc').withOneCXEnvironment({
+    this.withOneCXEnvironment({
       ...this.getOneCXEnvironment(),
       QUARKUS_DATASOURCE_USERNAME: 'onecx_permission',
       QUARKUS_DATASOURCE_PASSWORD: 'onecx_permission',

@@ -2,7 +2,11 @@ import { OneCXUiContainer, OneCXUiContainerServices } from '../abstract/onecx-ui
 
 export class OneCXShellUiContainer extends OneCXUiContainer {
   constructor(image: string, services: OneCXUiContainerServices) {
-    super(image, { nameAndAlias: 'onecx-shell-ui', applicationName: 'shell', appId: 'shell-ui' }, services)
+    super(
+      image,
+      { name: 'onecx-shell-ui', alias: 'onecx-shell-ui', applicationName: 'shell', appId: 'shell-ui' },
+      services
+    )
 
     this.withOneCXEnvironment({
       ...this.getOneCXEnvironment(),

@@ -6,7 +6,8 @@ import { StartedOneCXPostgresContainer } from '../core/onecx-postgres'
 import { StartedOneCXKeycloakContainer } from '../core/onecx-keycloak'
 
 export interface OneCXSvcContainerDetails {
-  nameAndAlias: string
+  name: string
+  alias: string
   applicationName: OneCXCoreApplication | string
   appId: string
 }
@@ -24,7 +25,8 @@ export class OneCXSvcContainer extends OneCXAppContainer {
   constructor(image: string, details: OneCXSvcContainerDetails, services: OneCXSvcContainerServices) {
     super(
       image,
-      details.nameAndAlias,
+      details.name,
+      details.alias,
       {
         appId: details.appId,
         applicationName: details.applicationName,

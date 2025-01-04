@@ -4,7 +4,12 @@ export class OneCXPermissionUiContainer extends OneCXUiContainer {
   constructor(image: string, services: OneCXUiContainerServices) {
     super(
       image,
-      { nameAndAlias: 'onecx-permission-ui', applicationName: 'permission', appId: 'permission-ui' },
+      {
+        name: 'onecx-permission-ui',
+        alias: 'onecx-permission-ui',
+        applicationName: 'permission',
+        appId: 'permission-ui'
+      },
       services
     )
 

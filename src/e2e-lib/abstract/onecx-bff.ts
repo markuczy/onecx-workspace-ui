@@ -5,7 +5,8 @@ import { OneCXCoreApplication } from '../model/onecx-application-type'
 import { StartedOneCXKeycloakContainer } from '../core/onecx-keycloak'
 
 export interface OneCXBffContainerDetails {
-  nameAndAlias: string
+  name: string
+  alias: string
   applicationName: OneCXCoreApplication | string
   appId: string
 }
@@ -19,7 +20,8 @@ export class OneCXBffContainer extends OneCXAppContainer {
   constructor(image: string, details: OneCXBffContainerDetails, services: OneCXBffContainerServices) {
     super(
       image,
-      details.nameAndAlias,
+      details.name,
+      details.alias,
       {
         appId: details.appId,
         applicationName: details.applicationName,

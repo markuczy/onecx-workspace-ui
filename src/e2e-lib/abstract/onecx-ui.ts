@@ -5,7 +5,8 @@ import { StartedOneCXKeycloakContainer } from '../core/onecx-keycloak'
 import { commonEnv } from '../constants/e2e-config'
 
 export interface OneCXUiContainerDetails {
-  nameAndAlias: string
+  name: string
+  alias: string
   applicationName: OneCXCoreApplication | string
   appId: string
 }
@@ -19,7 +20,8 @@ export class OneCXUiContainer extends OneCXAppContainer {
   constructor(image: string, details: OneCXUiContainerDetails, services: OneCXUiContainerServices) {
     super(
       image,
-      details.nameAndAlias,
+      details.name,
+      details.alias,
       {
         appId: details.appId,
         applicationName: details.applicationName,

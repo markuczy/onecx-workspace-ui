@@ -4,7 +4,12 @@ export class OneCXPermissionBffContainer extends OneCXBffContainer {
   constructor(image: string, services: OneCXBffContainerServices) {
     super(
       image,
-      { nameAndAlias: 'onecx-permission-bff', applicationName: 'permission', appId: 'permission-bff' },
+      {
+        name: 'onecx-permission-bff',
+        alias: 'onecx-permission-bff',
+        applicationName: 'permission',
+        appId: 'permission-bff'
+      },
       services
     )
 

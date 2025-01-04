@@ -4,7 +4,12 @@ export class OneCXProductStoreSvcContainer extends OneCXSvcContainer {
   constructor(image: string, services: OneCXSvcContainerServices) {
     super(
       image,
-      { nameAndAlias: 'onecx-product-store-svc', applicationName: 'product-store', appId: 'product-store-svc' },
+      {
+        name: 'onecx-product-store-svc',
+        alias: 'onecx-product-store-svc',
+        applicationName: 'product-store',
+        appId: 'product-store-svc'
+      },
       services
     )
 

@@ -2,7 +2,11 @@ import { OneCXBffContainer, OneCXBffContainerServices } from '../abstract/onecx-
 
 export class OneCXTenantBffContainer extends OneCXBffContainer {
   constructor(image: string, services: OneCXBffContainerServices) {
-    super(image, { nameAndAlias: 'onecx-tenant-bff', applicationName: 'tenant', appId: 'tenant-bff' }, services)
+    super(
+      image,
+      { name: 'onecx-tenant-bff', alias: 'onecx-tenant-bff', applicationName: 'tenant', appId: 'tenant-bff' },
+      services
+    )
 
     this.withOneCXEnvironment({
       ...this.getOneCXEnvironment(),

@@ -4,7 +4,12 @@ export class OneCXProductStoreUiContainer extends OneCXUiContainer {
   constructor(image: string, services: OneCXUiContainerServices) {
     super(
       image,
-      { nameAndAlias: 'onecx-product-store-ui', applicationName: 'product-store', appId: 'product-store-ui' },
+      {
+        name: 'onecx-product-store-ui',
+        alias: 'onecx-product-store-ui',
+        applicationName: 'product-store',
+        appId: 'product-store-ui'
+      },
       services
     )
 

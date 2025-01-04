@@ -18,6 +18,8 @@ import { importDatabaseData } from '../utils/utils'
 import { OneCXShellBffContainer } from '../core/onecx-shell-bff'
 import { OneCXShellUiContainer } from '../core/onecx-shell-ui'
 import { ContainerStartError } from '../model/container-start-error'
+import { OneCXContainer } from '../abstract/onecx-container'
+import { OneCXAppContainer } from '../abstract/onecx-app'
 
 export type CheckDatabaseFunc = (dbName: string, databaseContainer: StartedOneCXPostgresContainer) => Promise<boolean>
 
@@ -34,16 +36,15 @@ export class OneCXEnvironment {
   private uis: OneCXAppSet<OneCXUiContainer> = new OneCXAppSet()
   private startedUis: Array<StartedOneCXUiContainer>
 
-  private nameAndAliasPrefix: string | undefined
+  private namePrefix: string | undefined
 
   private checkDatabases: boolean = true
   private checkDatabaseFunc: CheckDatabaseFunc = this.defaultCheckDatabaseFunc
 
   constructor() {}
 
-  // TODO: Prefix only for name so container names don't clash
-  public withOneCXNameAndAliasPrefix(prefix: string) {
-    this.nameAndAliasPrefix = prefix
+  public withOneCXNamePrefix(prefix: string) {
+    this.namePrefix = prefix
     return this
   }
 
@@ -73,17 +74,17 @@ export class OneCXEnvironment {
   }
 
   public withOneCXService(svc: OneCXSvcContainer) {
-    this.services.add(svc)
+    this.addApp<OneCXSvcContainer>(this.services, svc)
     return this
   }
 
   public withOneCXBff(bff: OneCXBffContainer) {
-    this.bffs.add(bff)
+    this.addApp<OneCXBffContainer>(this.bffs, bff)
     return this
   }
 
   public withOneCXUi(ui: OneCXUiContainer) {
-    this.uis.add(ui)
+    this.addApp<OneCXUiContainer>(this.uis, ui)
     return this
   }
 
@@ -308,24 +309,17 @@ export class OneCXEnvironment {
   }
 
   // TODO: Image overwrite
-  // TODO: For existing SVC prior to returning set the nameAndAliasPrefix
   private setupThemeSvc(
     network: StartedNetwork,
     databaseContainer: StartedOneCXPostgresContainer,
     keycloakContainer: StartedOneCXKeycloakContainer
-  ) {
+  ): OneCXThemeSvcContainer {
     const themeSvc = new OneCXThemeSvcContainer(containerImagesEnv.ONECX_THEME_SVC, {
       network,
       databaseContainer,
       keycloakContainer
     })
-    const existingThemeSvc = this.services.get(themeSvc)
-    if (existingThemeSvc) return existingThemeSvc
-
-    !this.services.has(themeSvc) && this.services.add(themeSvc)
-    this.nameAndAliasPrefix &&
-      themeSvc.withOneCXNameAndAlias(this.nameAndAliasPrefix.concat(themeSvc.getOneCXNameAndAlias()))
-    return themeSvc
+    return this.addApp<OneCXSvcContainer>(this.services, themeSvc)
   }
 
   // TODO: Image overwrite
@@ -339,13 +333,7 @@ export class OneCXEnvironment {
       databaseContainer,
       keycloakContainer
     })
-    const existingTenantSvc = this.services.get(tenantSvc)
-    if (existingTenantSvc) return existingTenantSvc
-
-    this.services.add(tenantSvc)
-    this.nameAndAliasPrefix &&
-      tenantSvc.withOneCXNameAndAlias(this.nameAndAliasPrefix.concat(tenantSvc.getOneCXNameAndAlias()))
-    return tenantSvc
+    return this.addApp<OneCXSvcContainer>(this.services, tenantSvc)
   }
 
   // TODO: Image overwrite
@@ -361,13 +349,7 @@ export class OneCXEnvironment {
       keycloakContainer,
       tenantContainer
     })
-    const existingPermissionSvc = this.services.get(permissionSvc)
-    if (existingPermissionSvc) return existingPermissionSvc
-
-    !this.services.has(permissionSvc) && this.services.add(permissionSvc)
-    this.nameAndAliasPrefix &&
-      permissionSvc.withOneCXNameAndAlias(this.nameAndAliasPrefix.concat(permissionSvc.getOneCXNameAndAlias()))
-    return permissionSvc
+    return this.addApp<OneCXSvcContainer>(this.services, permissionSvc)
   }
 
   // TODO: Image overwrite
@@ -381,13 +363,7 @@ export class OneCXEnvironment {
       databaseContainer,
       keycloakContainer
     })
-    const existingProductStoreSvc = this.services.get(productStoreSvc)
-    if (existingProductStoreSvc) return existingProductStoreSvc
-
-    !this.services.has(productStoreSvc) && this.services.add(productStoreSvc)
-    this.nameAndAliasPrefix &&
-      productStoreSvc.withOneCXNameAndAlias(this.nameAndAliasPrefix.concat(productStoreSvc.getOneCXNameAndAlias()))
-    return productStoreSvc
+    return this.addApp<OneCXSvcContainer>(this.services, productStoreSvc)
   }
 
   // TODO: Image overwrite
@@ -401,13 +377,7 @@ export class OneCXEnvironment {
       databaseContainer,
       keycloakContainer
     })
-    const existingUserProfileSvc = this.services.get(userProfileSvc)
-    if (existingUserProfileSvc) return existingUserProfileSvc
-
-    !this.services.has(userProfileSvc) && this.services.add(userProfileSvc)
-    this.nameAndAliasPrefix &&
-      userProfileSvc.withOneCXNameAndAlias(this.nameAndAliasPrefix.concat(userProfileSvc.getOneCXNameAndAlias()))
-    return userProfileSvc
+    return this.addApp<OneCXSvcContainer>(this.services, userProfileSvc)
   }
 
   // TODO: Image overwrite
@@ -421,13 +391,7 @@ export class OneCXEnvironment {
       databaseContainer,
       keycloakContainer
     })
-    const existingIamKcSvc = this.services.get(iamKcSvc)
-    if (existingIamKcSvc) return existingIamKcSvc
-
-    !this.services.has(iamKcSvc) && this.services.add(iamKcSvc)
-    this.nameAndAliasPrefix &&
-      iamKcSvc.withOneCXNameAndAlias(this.nameAndAliasPrefix.concat(iamKcSvc.getOneCXNameAndAlias()))
-    return iamKcSvc
+    return this.addApp<OneCXSvcContainer>(this.services, iamKcSvc)
   }
 
   // TODO: Image overwrite
@@ -441,45 +405,27 @@ export class OneCXEnvironment {
       databaseContainer,
       keycloakContainer
     })
-    const existingWorkspaceSvc = this.services.get(workspaceSvc)
-    if (existingWorkspaceSvc) return existingWorkspaceSvc
-
-    !this.services.has(workspaceSvc) && this.services.add(workspaceSvc)
-    this.nameAndAliasPrefix &&
-      workspaceSvc.withOneCXNameAndAlias(this.nameAndAliasPrefix.concat(workspaceSvc.getOneCXNameAndAlias()))
-    return workspaceSvc
+    return this.addApp<OneCXSvcContainer>(this.services, workspaceSvc)
   }
 
   // TODO: Image overwrite
   private setupShellBff(network: StartedNetwork, keycloakContainer: StartedOneCXKeycloakContainer) {
     const shellBff = new OneCXShellBffContainer(containerImagesEnv.ONECX_SHELL_BFF, { network, keycloakContainer })
-    const existingShellBff = this.bffs.get(shellBff)
-    if (existingShellBff) return existingShellBff
-
-    !this.bffs.has(shellBff) && this.bffs.add(shellBff)
-    this.nameAndAliasPrefix &&
-      shellBff.withOneCXNameAndAlias(this.nameAndAliasPrefix.concat(shellBff.getOneCXNameAndAlias()))
-    return shellBff
+    return this.addApp<OneCXBffContainer>(this.bffs, shellBff)
   }
 
   // TODO: Image overwrite
   private setupShellUi(network: StartedNetwork, keycloakContainer: StartedOneCXKeycloakContainer) {
     const shellUi = new OneCXShellUiContainer(containerImagesEnv.ONECX_SHELL_UI, { network, keycloakContainer })
-    const existingShellUi = this.uis.get(shellUi)
-    if (existingShellUi) return existingShellUi
-
-    !this.uis.has(shellUi) && this.uis.add(shellUi)
-    this.nameAndAliasPrefix &&
-      shellUi.withOneCXNameAndAlias(this.nameAndAliasPrefix.concat(shellUi.getOneCXNameAndAlias()))
-    return shellUi
+    return this.addApp<OneCXUiContainer>(this.uis, shellUi)
   }
 
   // TODO: There should be default db data and path to it
   // TODO: Image overwrite
   private setupDatabase(network: StartedNetwork) {
     const db = new OneCXPostgresContainer(containerImagesEnv.POSTGRES, network, path.resolve('e2e-tests/init-data/db'))
-    this.nameAndAliasPrefix && db.withOneCXNameAndAlias(this.nameAndAliasPrefix.concat(db.getOneCXNameAndAlias()))
-    return db
+
+    return this.prefixedContainer(db)
   }
 
   // TODO: There should be default db data and path to it
@@ -491,10 +437,23 @@ export class OneCXEnvironment {
       databaseContainer,
       path.resolve('e2e-tests/init-data/keycloak/imports')
     )
-    this.nameAndAliasPrefix &&
-      keycloak.withOneCXNameAndAlias(this.nameAndAliasPrefix.concat(keycloak.getOneCXNameAndAlias()))
 
-    return keycloak
+    return this.prefixedContainer(keycloak)
+  }
+
+  private addApp<T extends OneCXAppContainer>(set: OneCXAppSet<T>, container: T) {
+    const existingApp = set.get(container)
+    if (existingApp) return this.prefixedContainer(existingApp)
+
+    set.add(container)
+    return this.prefixedContainer(container)
+  }
+
+  private prefixedContainer<T extends OneCXContainer>(container: T) {
+    if (this.namePrefix && container.getOneCXName().startsWith(this.namePrefix)) return container
+
+    this.namePrefix && container.withOneCXName(this.namePrefix.concat(container.getOneCXName()))
+    return container
   }
 
   private async defaultCheckDatabaseFunc(dbName: string, databaseContainer: StartedOneCXPostgresContainer) {

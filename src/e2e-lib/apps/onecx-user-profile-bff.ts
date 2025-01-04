@@ -4,7 +4,12 @@ export class OneCXUserProfileBffContainer extends OneCXBffContainer {
   constructor(image: string, services: OneCXBffContainerServices) {
     super(
       image,
-      { nameAndAlias: 'onecx-user-profile-bff', applicationName: 'user-profile', appId: 'user-profile-bff' },
+      {
+        name: 'onecx-user-profile-bff',
+        alias: 'onecx-user-profile-bff',
+        applicationName: 'user-profile',
+        appId: 'user-profile-bff'
+      },
       services
     )
 

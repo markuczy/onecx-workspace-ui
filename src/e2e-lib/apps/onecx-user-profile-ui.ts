@@ -4,7 +4,12 @@ export class OneCXUserProfileUiContainer extends OneCXUiContainer {
   constructor(image: string, services: OneCXUiContainerServices) {
     super(
       image,
-      { nameAndAlias: 'onecx-user-profile-ui', applicationName: 'user-profile', appId: 'user-profile-ui' },
+      {
+        name: 'onecx-user-profile-ui',
+        alias: 'onecx-user-profile-ui',
+        applicationName: 'user-profile',
+        appId: 'user-profile-ui'
+      },
       services
     )
 

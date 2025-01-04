@@ -26,9 +26,10 @@ export class OneCXKeycloakContainer extends OneCXContainer {
     private readonly databaseContainer: StartedOneCXPostgresContainer,
     private readonly initDataPath?: string
   ) {
+    const name = 'keycloak-app'
     const alias = 'keycloak-app'
     const port = 8080
-    super(image, alias, network)
+    super(image, name, alias, network)
 
     this.withOneCXRealm(commonEnv.KC_REALM)
       .withOneCXEnvironment({
@@ -61,8 +62,8 @@ export class OneCXKeycloakContainer extends OneCXContainer {
       .withOneCXExposedPort(port)
   }
 
-  public withOneCXNameAndAlias(nameAndAlias: string): this {
-    super.withOneCXNameAndAlias(nameAndAlias)
+  public withOneCXAlias(alias: string): this {
+    super.withOneCXAlias(alias)
 
     this.updateEnv()
     return this
@@ -128,6 +129,7 @@ export class OneCXKeycloakContainer extends OneCXContainer {
 
     return new StartedOneCXKeycloakContainer(
       await super.start(),
+      this.getOneCXName(),
       this.getOneCXAlias(),
       this.getOneCXNetwork(),
       this.onecxKeycloakDetails,
@@ -171,12 +173,13 @@ export class OneCXKeycloakContainer extends OneCXContainer {
 export class StartedOneCXKeycloakContainer extends StartedOneCXContainer {
   constructor(
     startedTestContainer: StartedTestContainer,
+    name: string,
     alias: string,
     network: StartedNetwork,
     private readonly onecxKeycloakDetails: OneCXKeycloakDetails,
     exposedPort: number | undefined
   ) {
-    super(startedTestContainer, alias, network, exposedPort)
+    super(startedTestContainer, name, alias, network, exposedPort)
   }
 
   public getOneCXRealm() {

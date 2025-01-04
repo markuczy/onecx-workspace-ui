@@ -2,7 +2,11 @@ import { OneCXUiContainer, OneCXUiContainerServices } from '../abstract/onecx-ui
 
 export class OneCXWorkspaceUiContainer extends OneCXUiContainer {
   constructor(image: string, services: OneCXUiContainerServices) {
-    super(image, { nameAndAlias: 'onecx-workspace-ui', applicationName: 'workspace', appId: 'workspace-ui' }, services)
+    super(
+      image,
+      { name: 'onecx-workspace-ui', alias: 'onecx-workspace-ui', applicationName: 'workspace', appId: 'workspace-ui' },
+      services
+    )
 
     this.withOneCXEnvironment({
       ...this.getOneCXEnvironment(),

@@ -9,7 +9,7 @@ export class OneCXPostgresContainer extends OneCXContainer {
     network: StartedNetwork,
     private readonly initDataPath?: string
   ) {
-    super(image, 'postgresdb', network)
+    super(image, 'postgresdb', 'postgresdb', network)
 
     this.withOneCXEnvironment({
       POSTGRES_DB: 'postgres',
@@ -49,6 +49,7 @@ export class OneCXPostgresContainer extends OneCXContainer {
 
     return new StartedOneCXPostgresContainer(
       await super.start(),
+      this.getOneCXName(),
       this.getOneCXAlias(),
       this.getOneCXNetwork(),
       this.getOneCXExposedPort()
@@ -59,11 +60,12 @@ export class OneCXPostgresContainer extends OneCXContainer {
 export class StartedOneCXPostgresContainer extends StartedOneCXContainer {
   constructor(
     startedTestContainer: StartedTestContainer,
+    name: string,
     alias: string,
     network: StartedNetwork,
     exposedPort: number | undefined
   ) {
-    super(startedTestContainer, alias, network, exposedPort)
+    super(startedTestContainer, name, alias, network, exposedPort)
   }
 
   public async getOneCXDatabases(): Promise<string[]> {

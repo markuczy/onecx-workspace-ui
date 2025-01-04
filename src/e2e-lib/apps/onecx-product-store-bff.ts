@@ -4,7 +4,12 @@ export class OneCXProductStoreBffContainer extends OneCXBffContainer {
   constructor(image: string, services: OneCXBffContainerServices) {
     super(
       image,
-      { nameAndAlias: 'onecx-product-store-bff', applicationName: 'product-store', appId: 'product-store-bff' },
+      {
+        name: 'onecx-product-store-bff',
+        alias: 'onecx-product-store-bff',
+        applicationName: 'product-store',
+        appId: 'product-store-bff'
+      },
       services
     )
 

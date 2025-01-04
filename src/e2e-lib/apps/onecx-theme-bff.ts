@@ -2,7 +2,11 @@ import { OneCXBffContainer, OneCXBffContainerServices } from '../abstract/onecx-
 
 export class OneCXThemeBffContainer extends OneCXBffContainer {
   constructor(image: string, services: OneCXBffContainerServices) {
-    super(image, { nameAndAlias: 'onecx-theme-bff', applicationName: 'theme', appId: 'theme-bff' }, services)
+    super(
+      image,
+      { name: 'onecx-theme-bff', alias: 'onecx-theme-bff', applicationName: 'theme', appId: 'theme-bff' },
+      services
+    )
 
     this.withOneCXEnvironment({
       ...this.getOneCXEnvironment(),

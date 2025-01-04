@@ -4,7 +4,12 @@ export class OneCXUserProfileSvcContainer extends OneCXSvcContainer {
   constructor(image: string, services: OneCXSvcContainerServices) {
     super(
       image,
-      { nameAndAlias: 'onecx-user-profile-svc', applicationName: 'user-profile', appId: 'user-profile-svc' },
+      {
+        name: 'onecx-user-profile-svc',
+        alias: 'onecx-user-profile-svc',
+        applicationName: 'user-profile',
+        appId: 'user-profile-svc'
+      },
       services
     )
 

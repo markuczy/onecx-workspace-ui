@@ -4,7 +4,12 @@ export class OneCXWorkspaceSvcContainer extends OneCXSvcContainer {
   constructor(image: string, services: OneCXSvcContainerServices) {
     super(
       image,
-      { nameAndAlias: 'onecx-workspace-svc', applicationName: 'workspace', appId: 'workspace-svc' },
+      {
+        name: 'onecx-workspace-svc',
+        alias: 'onecx-workspace-svc',
+        applicationName: 'workspace',
+        appId: 'workspace-svc'
+      },
       services
     )
 

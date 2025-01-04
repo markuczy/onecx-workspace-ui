@@ -17,7 +17,6 @@ describe('module spec', () => {
   })
 
   // TODO: Offer login functionality for products out of the box
-  // TODO: Write real assertion to check for the module loading
   it('renders the page', () => {
     cy.visit(`http://${SHELL_ADDRESS}/onecx-shell/admin/workspace`)
 
