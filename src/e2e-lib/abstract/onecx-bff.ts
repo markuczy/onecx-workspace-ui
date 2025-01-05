@@ -4,6 +4,9 @@ import { bffEnv, commonEnv } from '../constants/e2e-config'
 import { OneCXCoreApplication } from '../model/onecx-application-type'
 import { OneCXKeycloakContainer, StartedOneCXKeycloakContainer } from '../core/onecx-keycloak'
 
+/**
+ * Details of the OneCX Bff App describing its relation with an Application
+ */
 export interface OneCXBffContainerDetails {
   name: string
   alias: string
@@ -11,11 +14,17 @@ export interface OneCXBffContainerDetails {
   appId: string
 }
 
+/**
+ * Services required by OneCX Bff App
+ */
 export interface OneCXBffContainerServices {
   network: StartedNetwork
   keycloakContainer: StartedOneCXKeycloakContainer | OneCXKeycloakContainer
 }
 
+/**
+ * Defined OneCX Bff App container
+ */
 export class OneCXBffContainer extends OneCXAppContainer {
   constructor(image: string, details: OneCXBffContainerDetails, services: OneCXBffContainerServices) {
     super(

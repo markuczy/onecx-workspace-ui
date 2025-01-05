@@ -13,6 +13,7 @@ import { OneCXWorkspaceSvcContainer } from './e2e-lib/apps/onecx-workspace-svc'
 import { StartedOneCXPostgresContainer } from './e2e-lib/core/onecx-postgres'
 import { OneCXShellUiContainer } from './e2e-lib/core/onecx-shell-ui'
 import { OneCXThemeSvcContainer } from './e2e-lib/apps/onecx-theme-svc'
+import { OneCXBaseSetup } from './e2e-lib/core/onecx-setup'
 
 // // depends on themeSvc
 // const themeBffContainer = await new OneCXThemeBffContainer(containerImagesEnv.ONECX_THEME_BFF, network).start()
@@ -103,8 +104,12 @@ async function setupCypressContainer(network: StartedNetwork) {
 }
 
 async function runTests() {
-  let oneCXEnv: OneCXEnvironment = new OneCXEnvironment(await new Network().start()).withOneCXNamePrefix(
-    'workspace-e2e_'
+  const network = await new Network().start()
+  let oneCXEnv: OneCXEnvironment = new OneCXEnvironment(
+    network,
+    new OneCXBaseSetup(network, {
+      namePrefix: 'e2e_workspace_'
+    })
   )
   try {
     oneCXEnv = await oneCXEnv

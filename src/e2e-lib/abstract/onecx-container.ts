@@ -2,6 +2,9 @@ import { AbstractStartedContainer, GenericContainer, StartedNetwork, StartedTest
 import { HealthCheck } from 'testcontainers/build/types'
 import { ContainerEnv } from '../model/container-env'
 
+/**
+ * Defined or started container interface
+ */
 export interface IOneCXContainer {
   getOneCXName(): string
   getOneCXAlias(): string
@@ -10,6 +13,9 @@ export interface IOneCXContainer {
 }
 
 // TODO: Configure log consumer
+/**
+ * Defined OneCX container
+ */
 export class OneCXContainer extends GenericContainer implements IOneCXContainer {
   private onecxEnv: ContainerEnv | undefined
   private onecxHealthCheck: HealthCheck | undefined
@@ -101,6 +107,9 @@ export class OneCXContainer extends GenericContainer implements IOneCXContainer 
   }
 }
 
+/**
+ * Started OneCX container
+ */
 export class StartedOneCXContainer extends AbstractStartedContainer implements IOneCXContainer {
   constructor(
     startedTestContainer: StartedTestContainer,

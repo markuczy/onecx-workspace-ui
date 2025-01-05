@@ -1,25 +1,13 @@
-import { Network, StartedNetwork } from 'testcontainers'
+import { StartedNetwork } from 'testcontainers'
 import { OneCXPostgresContainer, StartedOneCXPostgresContainer } from './onecx-postgres'
-import { containerImagesEnv } from '../constants/e2e-config'
 import path from 'path'
 import { OneCXKeycloakContainer, StartedOneCXKeycloakContainer } from './onecx-keycloak'
-import { OneCXThemeSvcContainer } from '../apps/onecx-theme-svc'
-import { OneCXPermissionSvcContainer } from '../apps/onecx-permission-svc'
-import { OneCXProductStoreSvcContainer } from '../apps/onecx-product-store-svc'
-import { OneCXUserProfileSvcContainer } from '../apps/onecx-user-profile-svc'
-import { OneCXIamKcSvcContainer } from '../apps/onecx-iam-kc-svc'
-import { OneCXTenantSvcContainer } from '../apps/onecx-tenant-svc'
-import { OneCXWorkspaceSvcContainer } from '../apps/onecx-workspace-svc'
 import { OneCXSvcContainer, StartedOneCXSvcContainer } from '../abstract/onecx-svc'
 import { OneCXBffContainer, StartedOneCXBffContainer } from '../abstract/onecx-bff'
 import { OneCXUiContainer, StartedOneCXUiContainer } from '../abstract/onecx-ui'
-import { OneCXAppSet } from '../abstract/onecx-app-set'
 import { importDatabaseData } from '../utils/utils'
-import { OneCXShellBffContainer } from '../core/onecx-shell-bff'
-import { OneCXShellUiContainer } from '../core/onecx-shell-ui'
 import { ContainerStartError } from '../model/container-start-error'
-import { IOneCXContainer, OneCXContainer } from '../abstract/onecx-container'
-import { OneCXAppContainer } from '../abstract/onecx-app'
+import { OneCXSetup } from './onecx-setup'
 
 export type CheckDatabaseFunc = (dbName: string, databaseContainer: StartedOneCXPostgresContainer) => Promise<boolean>
 
@@ -28,33 +16,19 @@ export interface OneCXEnvironmentStartParams {
 }
 
 export class OneCXEnvironment {
-  private network: StartedNetwork
-  private database: OneCXPostgresContainer
   private startedDatabase: StartedOneCXPostgresContainer | undefined
-  private keycloak: OneCXKeycloakContainer
   private startedKeycloak: StartedOneCXKeycloakContainer | undefined
-  private services: OneCXAppSet<OneCXSvcContainer> = new OneCXAppSet()
   private startedServices: Array<StartedOneCXSvcContainer> = []
-  private bffs: OneCXAppSet<OneCXBffContainer> = new OneCXAppSet()
   private startedBffs: Array<StartedOneCXBffContainer> = []
-  private uis: OneCXAppSet<OneCXUiContainer> = new OneCXAppSet()
   private startedUis: Array<StartedOneCXUiContainer> = []
-
-  private namePrefix: string | undefined
 
   private checkDatabases: boolean = true
   private checkDatabaseFunc: CheckDatabaseFunc = this.defaultCheckDatabaseFunc
 
-  constructor(network: StartedNetwork) {
-    this.network = network
-    this.database = this.setupDatabase(this.network)
-    this.keycloak = this.setupKeycloak(this.network, this.database)
-  }
-
-  public withOneCXNamePrefix(prefix: string) {
-    this.namePrefix = prefix
-    return this
-  }
+  constructor(
+    private readonly network: StartedNetwork,
+    private readonly setup: OneCXSetup
+  ) {}
 
   public withCheckDatabases(ifCheckDatabases: boolean) {
     this.checkDatabases = ifCheckDatabases
@@ -67,27 +41,27 @@ export class OneCXEnvironment {
   }
 
   public withOneCXDatabase(database: OneCXPostgresContainer) {
-    this.database = database
+    this.setup.database = database
     return this
   }
 
   public withOneCXKeycloak(keycloak: OneCXKeycloakContainer) {
-    this.keycloak = keycloak
+    this.setup.keycloak = keycloak
     return this
   }
 
   public withOneCXService(svc: OneCXSvcContainer) {
-    this.addApp<OneCXSvcContainer>(this.services, svc)
+    this.setup.withApp('SVC', svc)
     return this
   }
 
   public withOneCXBff(bff: OneCXBffContainer) {
-    this.addApp<OneCXBffContainer>(this.bffs, bff)
+    this.setup.withApp('BFF', bff)
     return this
   }
 
   public withOneCXUi(ui: OneCXUiContainer) {
-    this.addApp<OneCXUiContainer>(this.uis, ui)
+    this.setup.withApp('UI', ui)
     return this
   }
 
@@ -96,7 +70,7 @@ export class OneCXEnvironment {
   }
 
   public getOneCXDatabase() {
-    return this.database
+    return this.setup.database
   }
 
   public getOneCXStartedDatabase() {
@@ -104,7 +78,7 @@ export class OneCXEnvironment {
   }
 
   public getOneCXKeycloak() {
-    return this.keycloak
+    return this.setup.keycloak
   }
 
   public getOneCXStartedKeycloak() {
@@ -112,7 +86,7 @@ export class OneCXEnvironment {
   }
 
   public getOneCXServices() {
-    return this.services
+    return this.setup.services
   }
 
   public getOneCXStartedServices() {
@@ -120,7 +94,7 @@ export class OneCXEnvironment {
   }
 
   public getOneCXBffs() {
-    return this.bffs
+    return this.setup.bffs
   }
 
   public getOneCXStartedBffs() {
@@ -128,7 +102,7 @@ export class OneCXEnvironment {
   }
 
   public getOneCXUis() {
-    return this.uis
+    return this.setup.uis
   }
 
   public getOneCXStartedUis() {
@@ -136,7 +110,7 @@ export class OneCXEnvironment {
   }
 
   public getOneCXService(appId: string) {
-    return this.services.values().find((svc) => svc.getOneCXAppId() === appId)
+    return this.setup.services.values().find((svc) => svc.getOneCXAppId() === appId)
   }
 
   public getOneCXStartedService(appId: string) {
@@ -144,7 +118,7 @@ export class OneCXEnvironment {
   }
 
   public getOneCXBff(appId: string) {
-    return this.bffs.values().find((bff) => bff.getOneCXAppId() === appId)
+    return this.setup.bffs.values().find((bff) => bff.getOneCXAppId() === appId)
   }
 
   public getOneCXStartedBff(appId: string) {
@@ -152,7 +126,7 @@ export class OneCXEnvironment {
   }
 
   public getOneCXUi(appId: string) {
-    return this.uis.values().find((ui) => ui.getOneCXAppId() === appId)
+    return this.setup.uis.values().find((ui) => ui.getOneCXAppId() === appId)
   }
 
   public getOneCXStartedUi(appId: string) {
@@ -173,7 +147,7 @@ export class OneCXEnvironment {
   }
 
   public async startDatabase() {
-    this.startedDatabase = await this.database.start()
+    this.startedDatabase = await this.setup.database.start()
     if (!this.startedDatabase) {
       throw new ContainerStartError('Could not start database container.')
     }
@@ -206,7 +180,7 @@ export class OneCXEnvironment {
       throw new ContainerStartError('Could not start keycloak. Database has not been created.')
     }
 
-    this.startedKeycloak = await this.keycloak.start()
+    this.startedKeycloak = await this.setup.keycloak.start()
     if (!this.startedKeycloak) {
       throw new ContainerStartError('Could not start keycloak.')
     }
@@ -221,23 +195,9 @@ export class OneCXEnvironment {
     if (!this.startedKeycloak) {
       throw new ContainerStartError('Could not start applications. Keycloak has not been created.')
     }
-    //--------SETUP-SERVICE--------
-    this.setupThemeSvc(this.network, this.startedDatabase, this.startedKeycloak)
-    const tenantSvc = this.setupTenantSvc(this.network, this.startedDatabase, this.startedKeycloak)
-    this.setupPermissionSvc(this.network, this.startedDatabase, this.startedKeycloak, tenantSvc)
-    this.setupProductStoreSvc(this.network, this.startedDatabase, this.startedKeycloak)
-    this.setupUserProfileSvc(this.network, this.startedDatabase, this.startedKeycloak)
-    this.setupIamKcSvc(this.network, this.startedDatabase, this.startedKeycloak)
-    this.setupWorkspaceSvc(this.network, this.startedDatabase, this.startedKeycloak)
-
-    //--------SETUP-BFF--------
-    this.setupShellBff(this.network, this.startedKeycloak)
-
-    //--------SETUP-UI--------
-    this.setupShellUi(this.network, this.startedKeycloak)
 
     this.startedServices = await Promise.all([
-      ...this.services.values().map((svc) =>
+      ...this.setup.services.values().map((svc) =>
         svc.start().catch((error) => {
           throw new ContainerStartError(`Could not start ${svc.getOneCXAlias()}`, error)
         })
@@ -245,7 +205,7 @@ export class OneCXEnvironment {
     ])
 
     this.startedBffs = await Promise.all([
-      ...this.bffs.values().map((bff) =>
+      ...this.setup.bffs.values().map((bff) =>
         bff.start().catch((error) => {
           throw new ContainerStartError(`Could not start ${bff.getOneCXAlias()}`, error)
         })
@@ -253,7 +213,7 @@ export class OneCXEnvironment {
     ])
 
     this.startedUis = await Promise.all([
-      ...this.uis.values().map((ui) =>
+      ...this.setup.uis.values().map((ui) =>
         ui.start().catch((error) => {
           throw new ContainerStartError(`Could not start ${ui.getOneCXAlias()}`, error)
         })
@@ -294,7 +254,7 @@ export class OneCXEnvironment {
 
   // TODO: There should be default db data and path to it
   // TODO: Handle failed import
-  public async importData() {
+  private async importData() {
     await importDatabaseData(
       {
         THEME_SVC_PORT: this.getOneCXStartedService('theme-svc')?.getMappedPort(8080) ?? -1,
@@ -315,143 +275,6 @@ export class OneCXEnvironment {
 
   private error(message: string) {
     console.error(`OneCXBaseEnvironment: ${message}`)
-  }
-
-  private setupThemeSvc(
-    network: StartedNetwork,
-    databaseContainer: StartedOneCXPostgresContainer,
-    keycloakContainer: StartedOneCXKeycloakContainer
-  ): OneCXThemeSvcContainer {
-    const themeSvc = new OneCXThemeSvcContainer(containerImagesEnv.ONECX_THEME_SVC, {
-      network,
-      databaseContainer,
-      keycloakContainer
-    })
-    return this.addApp<OneCXSvcContainer>(this.services, themeSvc)
-  }
-
-  private setupTenantSvc(
-    network: StartedNetwork,
-    databaseContainer: StartedOneCXPostgresContainer,
-    keycloakContainer: StartedOneCXKeycloakContainer
-  ) {
-    const tenantSvc = new OneCXTenantSvcContainer(containerImagesEnv.ONECX_TENANT_SVC, {
-      network,
-      databaseContainer,
-      keycloakContainer
-    })
-    return this.addApp<OneCXSvcContainer>(this.services, tenantSvc)
-  }
-
-  private setupPermissionSvc(
-    network: StartedNetwork,
-    databaseContainer: StartedOneCXPostgresContainer,
-    keycloakContainer: StartedOneCXKeycloakContainer,
-    tenantContainer: OneCXTenantSvcContainer
-  ) {
-    const permissionSvc = new OneCXPermissionSvcContainer(containerImagesEnv.ONECX_PERMISSION_SVC, {
-      network,
-      databaseContainer,
-      keycloakContainer,
-      tenantContainer
-    })
-    return this.addApp<OneCXSvcContainer>(this.services, permissionSvc)
-  }
-
-  private setupProductStoreSvc(
-    network: StartedNetwork,
-    databaseContainer: StartedOneCXPostgresContainer,
-    keycloakContainer: StartedOneCXKeycloakContainer
-  ) {
-    const productStoreSvc = new OneCXProductStoreSvcContainer(containerImagesEnv.ONECX_PRODUCT_STORE_SVC, {
-      network,
-      databaseContainer,
-      keycloakContainer
-    })
-    return this.addApp<OneCXSvcContainer>(this.services, productStoreSvc)
-  }
-
-  private setupUserProfileSvc(
-    network: StartedNetwork,
-    databaseContainer: StartedOneCXPostgresContainer,
-    keycloakContainer: StartedOneCXKeycloakContainer
-  ) {
-    const userProfileSvc = new OneCXUserProfileSvcContainer(containerImagesEnv.ONECX_USER_PROFILE_SVC, {
-      network,
-      databaseContainer,
-      keycloakContainer
-    })
-    return this.addApp<OneCXSvcContainer>(this.services, userProfileSvc)
-  }
-
-  private setupIamKcSvc(
-    network: StartedNetwork,
-    databaseContainer: StartedOneCXPostgresContainer,
-    keycloakContainer: StartedOneCXKeycloakContainer
-  ) {
-    const iamKcSvc = new OneCXIamKcSvcContainer(containerImagesEnv.ONECX_IAM_KC_SVC, {
-      network,
-      databaseContainer,
-      keycloakContainer
-    })
-    return this.addApp<OneCXSvcContainer>(this.services, iamKcSvc)
-  }
-
-  private setupWorkspaceSvc(
-    network: StartedNetwork,
-    databaseContainer: StartedOneCXPostgresContainer,
-    keycloakContainer: StartedOneCXKeycloakContainer
-  ) {
-    const workspaceSvc = new OneCXWorkspaceSvcContainer(containerImagesEnv.ONECX_WORKSPACE_SVC, {
-      network,
-      databaseContainer,
-      keycloakContainer
-    })
-    return this.addApp<OneCXSvcContainer>(this.services, workspaceSvc)
-  }
-
-  private setupShellBff(network: StartedNetwork, keycloakContainer: StartedOneCXKeycloakContainer) {
-    const shellBff = new OneCXShellBffContainer(containerImagesEnv.ONECX_SHELL_BFF, { network, keycloakContainer })
-    return this.addApp<OneCXBffContainer>(this.bffs, shellBff)
-  }
-
-  private setupShellUi(network: StartedNetwork, keycloakContainer: StartedOneCXKeycloakContainer) {
-    const shellUi = new OneCXShellUiContainer(containerImagesEnv.ONECX_SHELL_UI, { network, keycloakContainer })
-    return this.addApp<OneCXUiContainer>(this.uis, shellUi)
-  }
-
-  // TODO: There should be default db data and path to it
-  private setupDatabase(network: StartedNetwork) {
-    const db = new OneCXPostgresContainer(containerImagesEnv.POSTGRES, network, path.resolve('e2e-tests/init-data/db'))
-
-    return this.prefixedContainer(db)
-  }
-
-  // TODO: There should be default db data and path to it
-  private setupKeycloak(network: StartedNetwork, databaseContainer: IOneCXContainer) {
-    const keycloak = new OneCXKeycloakContainer(
-      containerImagesEnv.KEYCLOAK,
-      network,
-      databaseContainer,
-      path.resolve('e2e-tests/init-data/keycloak/imports')
-    )
-
-    return this.prefixedContainer(keycloak)
-  }
-
-  private addApp<T extends OneCXAppContainer>(set: OneCXAppSet<T>, container: T) {
-    const existingApp = set.get(container)
-    if (existingApp) return this.prefixedContainer(existingApp)
-
-    set.add(container)
-    return this.prefixedContainer(container)
-  }
-
-  private prefixedContainer<T extends OneCXContainer>(container: T) {
-    if (this.namePrefix && container.getOneCXName().startsWith(this.namePrefix)) return container
-
-    this.namePrefix && container.withOneCXName(this.namePrefix.concat(container.getOneCXName()))
-    return container
   }
 
   private async defaultCheckDatabaseFunc(dbName: string, databaseContainer: StartedOneCXPostgresContainer) {

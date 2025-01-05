@@ -5,6 +5,9 @@ import { OneCXCoreApplication } from '../model/onecx-application-type'
 import { IOneCXKeycloakContainer } from '../core/onecx-keycloak'
 import { IOneCXContainer } from './onecx-container'
 
+/**
+ * Details of the OneCX Svc App describing its relation with an Application
+ */
 export interface OneCXSvcContainerDetails {
   name: string
   alias: string
@@ -12,19 +15,29 @@ export interface OneCXSvcContainerDetails {
   appId: string
 }
 
+/**
+ * Services required by OneCX Svc App
+ */
 export interface OneCXSvcContainerServices {
   network: StartedNetwork
   databaseContainer: IOneCXContainer
   keycloakContainer: IOneCXKeycloakContainer
 }
 
+/**
+ * Defined or started OneCX Svc App container interface
+ */
 export interface IOneCXSvcContainer extends IOneCXAppContainer {
   getOneCXKeycloakContainer(): IOneCXKeycloakContainer
+  getOneCXDatabaseContainer(): IOneCXContainer
 }
 
+/**
+ * Defined OneCX Svc App container
+ */
 export class OneCXSvcContainer extends OneCXAppContainer {
-  private databaseContainer: IOneCXContainer
   private keycloakContainer: IOneCXKeycloakContainer
+  private databaseContainer: IOneCXContainer
 
   constructor(image: string, details: OneCXSvcContainerDetails, services: OneCXSvcContainerServices) {
     super(

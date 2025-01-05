@@ -3,18 +3,27 @@ import { IOneCXContainer, OneCXContainer, StartedOneCXContainer } from './onecx-
 import { OneCXAppType } from '../model/onecx-app-type'
 import { OneCXCoreApplication } from '../model/onecx-application-type'
 
+/**
+ * Details of the OneCX App describing its relation with an Application
+ */
 export interface OneCXAppDetails {
   appType: OneCXAppType
   applicationName: OneCXCoreApplication | string
   appId: string
 }
 
+/**
+ * Defined or started OneCX App container interface
+ */
 export interface IOneCXAppContainer extends IOneCXContainer {
   getOneCXAppType(): OneCXAppType
   getOneCXApplicationName(): OneCXCoreApplication | string
   getOneCXAppId(): string
 }
 
+/**
+ * Defined OneCX App container
+ */
 export class OneCXAppContainer extends OneCXContainer implements IOneCXAppContainer {
   private onecxAppDetails: OneCXAppDetails
   constructor(image: string, name: string, alias: string, appDetails: OneCXAppDetails, network: StartedNetwork) {
@@ -47,6 +56,9 @@ export class OneCXAppContainer extends OneCXContainer implements IOneCXAppContai
   }
 }
 
+/**
+ * Started OneCX App container
+ */
 export class StartedOneCXAppContainer extends StartedOneCXContainer implements IOneCXAppContainer {
   constructor(
     startedTestContainer: StartedTestContainer,

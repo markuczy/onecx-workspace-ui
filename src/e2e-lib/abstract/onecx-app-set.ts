@@ -4,8 +4,6 @@ export class OneCXAppSet<T extends OneCXAppContainer> {
   private appList: Array<T> = []
 
   add(appToAdd: T) {
-    this.remove(appToAdd)
-
     this.appList.push(appToAdd)
   }
 
@@ -13,28 +11,33 @@ export class OneCXAppSet<T extends OneCXAppContainer> {
     this.appList = this.appList.filter(
       (app) =>
         !(
-          app.getOneCXAppDetails().appId === appToRemove.getOneCXAppDetails().appId &&
-          app.getOneCXAppDetails().appType === appToRemove.getOneCXAppDetails().appType &&
-          app.getOneCXAppDetails().applicationName === appToRemove.getOneCXAppDetails().applicationName
+          app.getOneCXAppId() === appToRemove.getOneCXAppId() &&
+          app.getOneCXAppType() === appToRemove.getOneCXAppType() &&
+          app.getOneCXApplicationName() === appToRemove.getOneCXApplicationName()
         )
     )
+  }
+
+  replace(appToReplace: T) {
+    this.remove(appToReplace)
+    this.add(appToReplace)
   }
 
   has(app: T) {
     return this.appList.some(
       (otherApp) =>
-        app.getOneCXAppDetails().appId === otherApp.getOneCXAppDetails().appId &&
-        app.getOneCXAppDetails().appType === otherApp.getOneCXAppDetails().appType &&
-        app.getOneCXAppDetails().applicationName === otherApp.getOneCXAppDetails().applicationName
+        app.getOneCXAppId() === otherApp.getOneCXAppId() &&
+        app.getOneCXAppType() === otherApp.getOneCXAppType() &&
+        app.getOneCXApplicationName() === otherApp.getOneCXApplicationName()
     )
   }
 
   get(app: T): T | undefined {
     return this.appList.find(
       (otherApp) =>
-        app.getOneCXAppDetails().appId === otherApp.getOneCXAppDetails().appId &&
-        app.getOneCXAppDetails().appType === otherApp.getOneCXAppDetails().appType &&
-        app.getOneCXAppDetails().applicationName === otherApp.getOneCXAppDetails().applicationName
+        app.getOneCXAppId() === otherApp.getOneCXAppId() &&
+        app.getOneCXAppType() === otherApp.getOneCXAppType() &&
+        app.getOneCXApplicationName() === otherApp.getOneCXApplicationName()
     )
   }
 
