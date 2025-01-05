@@ -1,7 +1,11 @@
-import { OneCXAppContainer } from './onecx-app'
+import { OneCXAppContainer, StartedOneCXAppContainer } from './onecx-app'
 
-export class OneCXAppSet<T extends OneCXAppContainer> {
-  private appList: Array<T> = []
+export class OneCXAppSet<T extends OneCXAppContainer | StartedOneCXAppContainer> {
+  private appList: Array<T>
+
+  constructor(appList?: Array<T>) {
+    this.appList = appList ?? []
+  }
 
   add(appToAdd: T) {
     this.appList.push(appToAdd)

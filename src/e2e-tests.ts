@@ -2,85 +2,16 @@ import { GenericContainer, StartedNetwork, StartedTestContainer, Network } from 
 import * as path from 'path'
 import * as fs from 'fs'
 import { exit } from 'process'
-import { OneCXEnvironment } from './e2e-lib/core/onecx-base-environment'
-import { OneCXWorkspaceBffContainer } from './e2e-lib/apps/onecx-workspace-bff'
-import { OneCXWorkspaceUiContainer } from './e2e-lib/apps/onecx-workspace-ui'
+import { OneCXEnvironment, StartedOneCXEnvironment } from './e2e-lib/core/onecx-base-environment'
 import { containerImagesEnv } from './e2e-lib/constants/e2e-config'
 import { exec } from 'child_process'
 import { ContainerStartError } from './e2e-lib/model/container-start-error'
-import { StartedOneCXKeycloakContainer } from './e2e-lib/core/onecx-keycloak'
 import { OneCXWorkspaceSvcContainer } from './e2e-lib/apps/onecx-workspace-svc'
-import { StartedOneCXPostgresContainer } from './e2e-lib/core/onecx-postgres'
 import { OneCXShellUiContainer } from './e2e-lib/core/onecx-shell-ui'
 import { OneCXThemeSvcContainer } from './e2e-lib/apps/onecx-theme-svc'
-import { OneCXBaseSetup, OneCXExtendedSetup } from './e2e-lib/core/onecx-setup'
+import { OneCXExtendedSetup } from './e2e-lib/core/onecx-setup'
 import { OneCXCoreApplications } from './e2e-lib/model/onecx-application-type'
-
-// // depends on themeSvc
-// const themeBffContainer = await new OneCXThemeBffContainer(containerImagesEnv.ONECX_THEME_BFF, network).start()
-
-// // depends on workspaceSvc
-// const workspaceBffContainer = await new OneCXWorkspaceBffContainer(
-//   containerImagesEnv.ONECX_WORKSPACE_BFF,
-//   network
-// ).start()
-
-// // depends on permissionSvc
-// const permissionBffContainer = await new OneCXPermissionBffContainer(
-//   containerImagesEnv.ONECX_PERMISSION_BFF,
-//   network
-// ).start()
-
-// // depends on productStoreSvc
-// const productStoreBffContainer = await new OneCXProductStoreBffContainer(
-//   containerImagesEnv.ONECX_PRODUCT_STORE_BFF,
-//   network
-// ).start()
-
-// // depends on userProfileSvc
-// const userProfileBffContainer = await new OneCXUserProfileBffContainer(
-//   containerImagesEnv.ONECX_USER_PROFILE_BFF,
-//   network
-// ).start()
-
-// // depends on iamSvc
-// const iamBffContainer = await new OneCXIamBffContainer(containerImagesEnv.ONECX_IAM_BFF, network).start()
-
-// // depends on tenantSvc
-// const tenantBffContainer = await new OneCXTenantBffContainer(containerImagesEnv.ONECX_TENANT_BFF, network).start()
-
-// // depends on themeBff
-// const themeUiContainer = await new OneCXThemeUiContainer(containerImagesEnv.ONECX_THEME_UI, network).start()
-
-// // depends on workspaceBff
-// const workspaceUiContainer = await new OneCXWorkspaceUiContainer(
-//   containerImagesEnv.ONECX_WORKSPACE_UI,
-//   network
-// ).start()
-
-// // depends on permissionUi
-// const permissionUiContainer = await new OneCXPermissionUiContainer(
-//   containerImagesEnv.ONECX_PERMISSION_UI,
-//   network
-// ).start()
-
-// // depends on productStoreUi
-// const productStoreUiContainer = await new OneCXProductStoreUiContainer(
-//   containerImagesEnv.ONECX_PRODUCT_STORE_UI,
-//   network
-// ).start()
-
-// // depends on userProfileUi
-// const userProfileUiContainer = await new OneCXUserProfileUiContainer(
-//   containerImagesEnv.ONECX_USER_PROFILE_UI,
-//   network
-// ).start()
-
-// // depends on iamUi
-// const iamUiContainer = await new OneCXIamUiContainer(containerImagesEnv.ONECX_IAM_UI, network).start()
-
-// // depends on tenantUi
-// const tenantUiContainer = await new OneCXTenantUiContainer(containerImagesEnv.ONECX_TENANT_UI, network).start()
+import { OneCXBaseRunner } from './e2e-lib/core/onecx-runner'
 
 // TODO: copy essential files only
 async function setupCypressContainer(network: StartedNetwork) {
@@ -106,16 +37,22 @@ async function setupCypressContainer(network: StartedNetwork) {
 
 async function runTests() {
   const network = await new Network().start()
+  const applicationList = [
+    [OneCXCoreApplications.WORKSPACE],
+    [OneCXCoreApplications.TENANT, OneCXCoreApplications.THEME]
+  ]
   let oneCXEnv: OneCXEnvironment = new OneCXEnvironment(
     network,
     new OneCXExtendedSetup(network, {
       extension: 'partial',
-      applicationList: [OneCXCoreApplications.WORKSPACE],
+      applicationList: applicationList.flat(),
       namePrefix: 'e2e_workspace_'
-    })
+    }),
+    new OneCXBaseRunner()
   )
+  let startedOneCXEnv: StartedOneCXEnvironment
   try {
-    oneCXEnv = await oneCXEnv
+    startedOneCXEnv = await oneCXEnv
       // .withOneCXBff(
       //   new OneCXWorkspaceBffContainer(containerImagesEnv.ONECX_WORKSPACE_BFF, {
       //     network: oneCXEnv.getOneCXNetwork(),
@@ -149,8 +86,9 @@ async function runTests() {
         })
       )
       .start({
-        importData: true
+        order: applicationList
       })
+    await startedOneCXEnv.importData()
   } catch (e) {
     if (e instanceof ContainerStartError) {
       console.error(`Error while starting OneCX environment: ${e.message}. Caused by: ${e.cause}`)
@@ -159,10 +97,10 @@ async function runTests() {
   }
 
   // Ensure Shell UI is running
-  const shellUiContainer = oneCXEnv.getOneCXShellUi()
+  const shellUiContainer = startedOneCXEnv.getOneCXShellUi()
   if (!shellUiContainer) {
     console.error('Shell UI is not defined.')
-    await oneCXEnv.teardown()
+    await startedOneCXEnv.teardown()
     exit(1)
   }
 
@@ -217,7 +155,7 @@ async function runTests() {
       console.log('Cypress container stopped')
     }
     // Cleanup environment
-    await oneCXEnv.teardown()
+    await startedOneCXEnv.teardown()
   }
 
   exit(testResult === 'success' ? 0 : 1)

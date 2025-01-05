@@ -42,6 +42,7 @@ export interface OneCXSetup {
   services: OneCXAppSet<OneCXSvcContainer>
   bffs: OneCXAppSet<OneCXBffContainer>
   uis: OneCXAppSet<OneCXUiContainer>
+  coreApps: OneCXAppSet<OneCXAppContainer>
 
   withApp(type: OneCXAppType, container: OneCXAppContainer): void
 }
@@ -57,6 +58,7 @@ export class OneCXBaseSetup implements OneCXSetup {
   services: OneCXAppSet<OneCXSvcContainer> = new OneCXAppSet()
   bffs: OneCXAppSet<OneCXBffContainer> = new OneCXAppSet()
   uis: OneCXAppSet<OneCXUiContainer> = new OneCXAppSet()
+  coreApps: OneCXAppSet<OneCXAppContainer> = new OneCXAppSet()
 
   protected namePrefix: string | undefined
 
@@ -99,6 +101,9 @@ export class OneCXBaseSetup implements OneCXSetup {
     this.setupShellBff(this.network, keycloakContainer)
 
     this.setupShellUi(this.network, keycloakContainer)
+
+    const coreApps = [...this.services.values(), ...this.bffs.values(), ...this.uis.values()]
+    coreApps.forEach((app) => this.coreApps.add(app))
   }
 
   // TODO: There should be default db data and path to it
