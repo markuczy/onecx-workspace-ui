@@ -1,4 +1,5 @@
 import { OneCXSvcContainer, OneCXSvcContainerServices } from '../abstract/onecx-svc'
+import { OneCXCoreApplication, OneCXCoreApplications } from '../model/onecx-application-type'
 
 export class OneCXUserProfileSvcContainer extends OneCXSvcContainer {
   constructor(image: string, services: OneCXSvcContainerServices) {
@@ -7,7 +8,7 @@ export class OneCXUserProfileSvcContainer extends OneCXSvcContainer {
       {
         name: 'onecx-user-profile-svc',
         alias: 'onecx-user-profile-svc',
-        applicationName: 'user-profile',
+        applicationName: OneCXCoreApplications.USER_PROFILE satisfies OneCXCoreApplication,
         appId: 'user-profile-svc'
       },
       services

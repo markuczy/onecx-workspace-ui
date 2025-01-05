@@ -1,4 +1,5 @@
 import { OneCXSvcContainer, OneCXSvcContainerServices, StartedOneCXSvcContainer } from '../abstract/onecx-svc'
+import { OneCXCoreApplication, OneCXCoreApplications } from '../model/onecx-application-type'
 
 export interface OneCXPermissionSvcContainerServices extends OneCXSvcContainerServices {
   tenantContainer: OneCXSvcContainer | StartedOneCXSvcContainer
@@ -11,7 +12,7 @@ export class OneCXPermissionSvcContainer extends OneCXSvcContainer {
       {
         name: 'onecx-permission-svc',
         alias: 'onecx-permission-svc',
-        applicationName: 'permission',
+        applicationName: OneCXCoreApplications.PERMISSION satisfies OneCXCoreApplication,
         appId: 'permission-svc'
       },
       services

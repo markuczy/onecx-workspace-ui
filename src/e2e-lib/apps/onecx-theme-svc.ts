@@ -1,10 +1,16 @@
 import { OneCXSvcContainer, OneCXSvcContainerServices } from '../abstract/onecx-svc'
+import { OneCXCoreApplication, OneCXCoreApplications } from '../model/onecx-application-type'
 
 export class OneCXThemeSvcContainer extends OneCXSvcContainer {
   constructor(image: string, services: OneCXSvcContainerServices) {
     super(
       image,
-      { name: 'onecx-theme-svc', alias: 'onecx-theme-svc', applicationName: 'theme', appId: 'theme-svc' },
+      {
+        name: 'onecx-theme-svc',
+        alias: 'onecx-theme-svc',
+        applicationName: OneCXCoreApplications.THEME satisfies OneCXCoreApplication,
+        appId: 'theme-svc'
+      },
       services
     )
 

@@ -13,7 +13,8 @@ import { OneCXWorkspaceSvcContainer } from './e2e-lib/apps/onecx-workspace-svc'
 import { StartedOneCXPostgresContainer } from './e2e-lib/core/onecx-postgres'
 import { OneCXShellUiContainer } from './e2e-lib/core/onecx-shell-ui'
 import { OneCXThemeSvcContainer } from './e2e-lib/apps/onecx-theme-svc'
-import { OneCXBaseSetup } from './e2e-lib/core/onecx-setup'
+import { OneCXBaseSetup, OneCXExtendedSetup } from './e2e-lib/core/onecx-setup'
+import { OneCXCoreApplications } from './e2e-lib/model/onecx-application-type'
 
 // // depends on themeSvc
 // const themeBffContainer = await new OneCXThemeBffContainer(containerImagesEnv.ONECX_THEME_BFF, network).start()
@@ -107,24 +108,26 @@ async function runTests() {
   const network = await new Network().start()
   let oneCXEnv: OneCXEnvironment = new OneCXEnvironment(
     network,
-    new OneCXBaseSetup(network, {
+    new OneCXExtendedSetup(network, {
+      extension: 'partial',
+      applicationList: [OneCXCoreApplications.WORKSPACE],
       namePrefix: 'e2e_workspace_'
     })
   )
   try {
     oneCXEnv = await oneCXEnv
-      .withOneCXBff(
-        new OneCXWorkspaceBffContainer(containerImagesEnv.ONECX_WORKSPACE_BFF, {
-          network: oneCXEnv.getOneCXNetwork(),
-          keycloakContainer: oneCXEnv.getOneCXKeycloak()
-        })
-      )
-      .withOneCXUi(
-        new OneCXWorkspaceUiContainer(containerImagesEnv.ONECX_WORKSPACE_UI, {
-          network: oneCXEnv.getOneCXNetwork(),
-          keycloakContainer: oneCXEnv.getOneCXKeycloak()
-        })
-      )
+      // .withOneCXBff(
+      //   new OneCXWorkspaceBffContainer(containerImagesEnv.ONECX_WORKSPACE_BFF, {
+      //     network: oneCXEnv.getOneCXNetwork(),
+      //     keycloakContainer: oneCXEnv.getOneCXKeycloak()
+      //   })
+      // )
+      // .withOneCXUi(
+      //   new OneCXWorkspaceUiContainer(containerImagesEnv.ONECX_WORKSPACE_UI, {
+      //     network: oneCXEnv.getOneCXNetwork(),
+      //     keycloakContainer: oneCXEnv.getOneCXKeycloak()
+      //   })
+      // )
       .withOneCXService(
         new OneCXWorkspaceSvcContainer(containerImagesEnv.ONECX_WORKSPACE_SVC, {
           network: oneCXEnv.getOneCXNetwork(),

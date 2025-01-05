@@ -1,4 +1,5 @@
 import { OneCXBffContainer, OneCXBffContainerServices } from '../abstract/onecx-bff'
+import { OneCXCoreApplication, OneCXCoreApplications } from '../model/onecx-application-type'
 
 export class OneCXPermissionBffContainer extends OneCXBffContainer {
   constructor(image: string, services: OneCXBffContainerServices) {
@@ -7,7 +8,7 @@ export class OneCXPermissionBffContainer extends OneCXBffContainer {
       {
         name: 'onecx-permission-bff',
         alias: 'onecx-permission-bff',
-        applicationName: 'permission',
+        applicationName: OneCXCoreApplications.PERMISSION satisfies OneCXCoreApplication,
         appId: 'permission-bff'
       },
       services

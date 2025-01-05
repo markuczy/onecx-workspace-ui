@@ -1,4 +1,5 @@
 import { OneCXUiContainer, OneCXUiContainerServices } from '../abstract/onecx-ui'
+import { OneCXCoreApplication, OneCXCoreApplications } from '../model/onecx-application-type'
 
 export class OneCXProductStoreUiContainer extends OneCXUiContainer {
   constructor(image: string, services: OneCXUiContainerServices) {
@@ -7,7 +8,7 @@ export class OneCXProductStoreUiContainer extends OneCXUiContainer {
       {
         name: 'onecx-product-store-ui',
         alias: 'onecx-product-store-ui',
-        applicationName: 'product-store',
+        applicationName: OneCXCoreApplications.PRODUCT_STORE satisfies OneCXCoreApplication,
         appId: 'product-store-ui'
       },
       services

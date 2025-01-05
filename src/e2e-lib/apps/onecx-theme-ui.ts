@@ -1,10 +1,16 @@
 import { OneCXUiContainer, OneCXUiContainerServices } from '../abstract/onecx-ui'
+import { OneCXCoreApplication, OneCXCoreApplications } from '../model/onecx-application-type'
 
 export class OneCXThemeUiContainer extends OneCXUiContainer {
   constructor(image: string, services: OneCXUiContainerServices) {
     super(
       image,
-      { name: 'onecx-theme-ui', alias: 'onecx-theme-ui', applicationName: 'theme', appId: 'theme-ui' },
+      {
+        name: 'onecx-theme-ui',
+        alias: 'onecx-theme-ui',
+        applicationName: OneCXCoreApplications.THEME satisfies OneCXCoreApplication,
+        appId: 'theme-ui'
+      },
       services
     )
 

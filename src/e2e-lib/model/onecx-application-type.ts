@@ -1,8 +1,11 @@
-export type OneCXCoreApplication =
-  | 'theme'
-  | 'permission'
-  | 'productStore'
-  | 'userProfile'
-  | 'iam'
-  | 'tenant'
-  | 'workspace'
+export class OneCXCoreApplications {
+  static readonly THEME = 'theme'
+  static readonly PERMISSION = 'permission'
+  static readonly PRODUCT_STORE = 'productStore'
+  static readonly USER_PROFILE = 'userProfile'
+  static readonly IAM = 'iam'
+  static readonly TENANT = 'tenant'
+  static readonly WORKSPACE = 'workspace'
+}
+
+export type OneCXCoreApplication = (typeof OneCXCoreApplications)[keyof Omit<typeof OneCXCoreApplications, 'prototype'>]

@@ -19,6 +19,21 @@ import { OneCXIamKcSvcContainer } from '../apps/onecx-iam-kc-svc'
 import { OneCXWorkspaceSvcContainer } from '../apps/onecx-workspace-svc'
 import { OneCXShellBffContainer } from './onecx-shell-bff'
 import { OneCXShellUiContainer } from './onecx-shell-ui'
+import { OneCXThemeBffContainer } from '../apps/onecx-theme-bff'
+import { OneCXTenantBffContainer } from '../apps/onecx-tenant-bff'
+import { OneCXPermissionBffContainer } from '../apps/onecx-permission-bff'
+import { OneCXProductStoreBffContainer } from '../apps/onecx-product-store-bff'
+import { OneCXUserProfileBffContainer } from '../apps/onecx-user-profile-bff'
+import { OneCXIamBffContainer } from '../apps/onecx-iam-bff'
+import { OneCXWorkspaceBffContainer } from '../apps/onecx-workspace-bff'
+import { OneCXThemeUiContainer } from '../apps/onecx-theme-ui'
+import { OneCXTenantUiContainer } from '../apps/onecx-tenant-ui'
+import { OneCXPermissionUiContainer } from '../apps/onecx-permission-ui'
+import { OneCXProductStoreUiContainer } from '../apps/onecx-product-store-ui'
+import { OneCXUserProfileUiContainer } from '../apps/onecx-user-profile-ui'
+import { OneCXIamUiContainer } from '../apps/onecx-iam-ui'
+import { OneCXWorkspaceUiContainer } from '../apps/onecx-workspace-ui'
+import { OneCXCoreApplication, OneCXCoreApplications } from '../model/onecx-application-type'
 
 export interface OneCXSetup {
   network: StartedNetwork
@@ -43,7 +58,7 @@ export class OneCXBaseSetup implements OneCXSetup {
   bffs: OneCXAppSet<OneCXBffContainer> = new OneCXAppSet()
   uis: OneCXAppSet<OneCXUiContainer> = new OneCXAppSet()
 
-  private namePrefix: string | undefined
+  protected namePrefix: string | undefined
 
   constructor(network: StartedNetwork, params?: OneCXBaseSetupParams) {
     this.network = network
@@ -51,7 +66,7 @@ export class OneCXBaseSetup implements OneCXSetup {
 
     this.database = this.setupDatabase(this.network)
     this.keycloak = this.setupKeycloak(this.network, this.database)
-    this.setupApps(this.network, this.database, this.keycloak)
+    this.setupBaseApps(this.network, this.database, this.keycloak)
   }
 
   public withApp(type: OneCXAppType, container: OneCXAppContainer): void {
@@ -68,7 +83,7 @@ export class OneCXBaseSetup implements OneCXSetup {
     }
   }
 
-  private setupApps(
+  private setupBaseApps(
     network: StartedNetwork,
     databaseContainer: OneCXPostgresContainer,
     keycloakContainer: OneCXKeycloakContainer
@@ -87,14 +102,14 @@ export class OneCXBaseSetup implements OneCXSetup {
   }
 
   // TODO: There should be default db data and path to it
-  private setupDatabase(network: StartedNetwork) {
+  protected setupDatabase(network: StartedNetwork) {
     const db = new OneCXPostgresContainer(containerImagesEnv.POSTGRES, network, path.resolve('e2e-tests/init-data/db'))
 
     return this.prefixedContainer(db)
   }
 
   // TODO: There should be default db data and path to it
-  private setupKeycloak(network: StartedNetwork, databaseContainer: OneCXPostgresContainer) {
+  protected setupKeycloak(network: StartedNetwork, databaseContainer: OneCXPostgresContainer) {
     const keycloak = new OneCXKeycloakContainer(
       containerImagesEnv.KEYCLOAK,
       network,
@@ -105,7 +120,7 @@ export class OneCXBaseSetup implements OneCXSetup {
     return this.prefixedContainer(keycloak)
   }
 
-  private setupThemeSvc(
+  protected setupThemeSvc(
     network: StartedNetwork,
     databaseContainer: OneCXPostgresContainer,
     keycloakContainer: OneCXKeycloakContainer
@@ -118,7 +133,7 @@ export class OneCXBaseSetup implements OneCXSetup {
     return this.addApp<OneCXSvcContainer>(this.services, themeSvc)
   }
 
-  private setupTenantSvc(
+  protected setupTenantSvc(
     network: StartedNetwork,
     databaseContainer: OneCXPostgresContainer,
     keycloakContainer: OneCXKeycloakContainer
@@ -131,7 +146,7 @@ export class OneCXBaseSetup implements OneCXSetup {
     return this.addApp<OneCXSvcContainer>(this.services, tenantSvc)
   }
 
-  private setupPermissionSvc(
+  protected setupPermissionSvc(
     network: StartedNetwork,
     databaseContainer: OneCXPostgresContainer,
     keycloakContainer: OneCXKeycloakContainer,
@@ -146,7 +161,7 @@ export class OneCXBaseSetup implements OneCXSetup {
     return this.addApp<OneCXSvcContainer>(this.services, permissionSvc)
   }
 
-  private setupProductStoreSvc(
+  protected setupProductStoreSvc(
     network: StartedNetwork,
     databaseContainer: OneCXPostgresContainer,
     keycloakContainer: OneCXKeycloakContainer
@@ -159,7 +174,7 @@ export class OneCXBaseSetup implements OneCXSetup {
     return this.addApp<OneCXSvcContainer>(this.services, productStoreSvc)
   }
 
-  private setupUserProfileSvc(
+  protected setupUserProfileSvc(
     network: StartedNetwork,
     databaseContainer: OneCXPostgresContainer,
     keycloakContainer: OneCXKeycloakContainer
@@ -172,7 +187,7 @@ export class OneCXBaseSetup implements OneCXSetup {
     return this.addApp<OneCXSvcContainer>(this.services, userProfileSvc)
   }
 
-  private setupIamKcSvc(
+  protected setupIamKcSvc(
     network: StartedNetwork,
     databaseContainer: OneCXPostgresContainer,
     keycloakContainer: OneCXKeycloakContainer
@@ -185,7 +200,7 @@ export class OneCXBaseSetup implements OneCXSetup {
     return this.addApp<OneCXSvcContainer>(this.services, iamKcSvc)
   }
 
-  private setupWorkspaceSvc(
+  protected setupWorkspaceSvc(
     network: StartedNetwork,
     databaseContainer: OneCXPostgresContainer,
     keycloakContainer: OneCXKeycloakContainer
@@ -198,27 +213,196 @@ export class OneCXBaseSetup implements OneCXSetup {
     return this.addApp<OneCXSvcContainer>(this.services, workspaceSvc)
   }
 
-  private setupShellBff(network: StartedNetwork, keycloakContainer: OneCXKeycloakContainer) {
+  protected setupShellBff(network: StartedNetwork, keycloakContainer: OneCXKeycloakContainer) {
     const shellBff = new OneCXShellBffContainer(containerImagesEnv.ONECX_SHELL_BFF, { network, keycloakContainer })
     return this.addApp<OneCXBffContainer>(this.bffs, shellBff)
   }
 
-  private setupShellUi(network: StartedNetwork, keycloakContainer: OneCXKeycloakContainer) {
+  protected setupShellUi(network: StartedNetwork, keycloakContainer: OneCXKeycloakContainer) {
     const shellUi = new OneCXShellUiContainer(containerImagesEnv.ONECX_SHELL_UI, { network, keycloakContainer })
     return this.addApp<OneCXUiContainer>(this.uis, shellUi)
   }
 
-  private addApp<T extends OneCXAppContainer>(set: OneCXAppSet<T>, container: T) {
+  protected addApp<T extends OneCXAppContainer>(set: OneCXAppSet<T>, container: T) {
     const prefixedContainer = this.prefixedContainer(container)
     set.replace(prefixedContainer)
 
     return prefixedContainer
   }
 
-  private prefixedContainer<T extends OneCXContainer>(container: T) {
+  protected prefixedContainer<T extends OneCXContainer>(container: T) {
     if (this.namePrefix && container.getOneCXName().startsWith(this.namePrefix)) return container
 
     this.namePrefix && container.withOneCXName(this.namePrefix.concat(container.getOneCXName()))
     return container
+  }
+}
+
+export interface OneCXExtendedSetupParams extends OneCXBaseSetupParams {
+  extension: 'partial' | 'all'
+  applicationList?: Array<OneCXCoreApplication | string>
+}
+
+export class OneCXExtendedSetup extends OneCXBaseSetup {
+  applicationList: Array<OneCXCoreApplication | string> = []
+  constructor(network: StartedNetwork, params: OneCXExtendedSetupParams) {
+    super(network, params)
+
+    if (params.extension === 'all') {
+      this.applicationList = [
+        OneCXCoreApplications.THEME,
+        OneCXCoreApplications.PERMISSION,
+        OneCXCoreApplications.PRODUCT_STORE,
+        OneCXCoreApplications.USER_PROFILE,
+        OneCXCoreApplications.IAM,
+        OneCXCoreApplications.TENANT,
+        OneCXCoreApplications.WORKSPACE
+      ] satisfies Array<OneCXCoreApplication>
+    } else {
+      this.applicationList = params.applicationList ?? []
+    }
+    this.setupExtendedApps(this.network, this.keycloak)
+  }
+
+  private setupExtendedApps(network: StartedNetwork, keycloakContainer: OneCXKeycloakContainer) {
+    this.applicationList.includes(OneCXCoreApplications.THEME) &&
+      this.setupThemeBff(network, keycloakContainer) &&
+      this.setupThemeUi(network, keycloakContainer)
+
+    this.applicationList.includes(OneCXCoreApplications.TENANT) &&
+      this.setupTenantBff(network, keycloakContainer) &&
+      this.setupTenantUi(network, keycloakContainer)
+
+    this.applicationList.includes(OneCXCoreApplications.PERMISSION) &&
+      this.setupPermissionBff(network, keycloakContainer) &&
+      this.setupPermissionUi(network, keycloakContainer)
+
+    this.applicationList.includes(OneCXCoreApplications.PRODUCT_STORE) &&
+      this.setupProductStoreBff(network, keycloakContainer) &&
+      this.setupProductStoreUi(network, keycloakContainer)
+
+    this.applicationList.includes(OneCXCoreApplications.USER_PROFILE) &&
+      this.setupUserProfileBff(network, keycloakContainer) &&
+      this.setupUserProfileUi(network, keycloakContainer)
+
+    this.applicationList.includes(OneCXCoreApplications.IAM) &&
+      this.setupIamBff(network, keycloakContainer) &&
+      this.setupIamUi(network, keycloakContainer)
+
+    this.applicationList.includes(OneCXCoreApplications.WORKSPACE) &&
+      this.setupWorkspaceBff(network, keycloakContainer) &&
+      this.setupWorkspaceUi(network, keycloakContainer)
+  }
+
+  protected setupThemeBff(network: StartedNetwork, keycloakContainer: OneCXKeycloakContainer) {
+    const bff = new OneCXThemeBffContainer(containerImagesEnv.ONECX_THEME_BFF, {
+      network,
+      keycloakContainer
+    })
+    return this.addApp<OneCXBffContainer>(this.bffs, bff)
+  }
+
+  protected setupThemeUi(network: StartedNetwork, keycloakContainer: OneCXKeycloakContainer) {
+    const ui = new OneCXThemeUiContainer(containerImagesEnv.ONECX_THEME_UI, {
+      network,
+      keycloakContainer
+    })
+    return this.addApp<OneCXUiContainer>(this.uis, ui)
+  }
+
+  protected setupTenantBff(network: StartedNetwork, keycloakContainer: OneCXKeycloakContainer) {
+    const bff = new OneCXTenantBffContainer(containerImagesEnv.ONECX_TENANT_BFF, {
+      network,
+      keycloakContainer
+    })
+    return this.addApp<OneCXBffContainer>(this.bffs, bff)
+  }
+
+  protected setupTenantUi(network: StartedNetwork, keycloakContainer: OneCXKeycloakContainer) {
+    const ui = new OneCXTenantUiContainer(containerImagesEnv.ONECX_TENANT_UI, {
+      network,
+      keycloakContainer
+    })
+    return this.addApp<OneCXUiContainer>(this.uis, ui)
+  }
+
+  protected setupPermissionBff(network: StartedNetwork, keycloakContainer: OneCXKeycloakContainer) {
+    const bff = new OneCXPermissionBffContainer(containerImagesEnv.ONECX_PERMISSION_BFF, {
+      network,
+      keycloakContainer
+    })
+    return this.addApp<OneCXBffContainer>(this.bffs, bff)
+  }
+
+  protected setupPermissionUi(network: StartedNetwork, keycloakContainer: OneCXKeycloakContainer) {
+    const ui = new OneCXPermissionUiContainer(containerImagesEnv.ONECX_PERMISSION_UI, {
+      network,
+      keycloakContainer
+    })
+    return this.addApp<OneCXUiContainer>(this.uis, ui)
+  }
+
+  protected setupProductStoreBff(network: StartedNetwork, keycloakContainer: OneCXKeycloakContainer) {
+    const bff = new OneCXProductStoreBffContainer(containerImagesEnv.ONECX_PRODUCT_STORE_BFF, {
+      network,
+      keycloakContainer
+    })
+    return this.addApp<OneCXBffContainer>(this.bffs, bff)
+  }
+
+  protected setupProductStoreUi(network: StartedNetwork, keycloakContainer: OneCXKeycloakContainer) {
+    const ui = new OneCXProductStoreUiContainer(containerImagesEnv.ONECX_PRODUCT_STORE_UI, {
+      network,
+      keycloakContainer
+    })
+    return this.addApp<OneCXUiContainer>(this.uis, ui)
+  }
+
+  protected setupUserProfileBff(network: StartedNetwork, keycloakContainer: OneCXKeycloakContainer) {
+    const bff = new OneCXUserProfileBffContainer(containerImagesEnv.ONECX_USER_PROFILE_BFF, {
+      network,
+      keycloakContainer
+    })
+    return this.addApp<OneCXBffContainer>(this.bffs, bff)
+  }
+
+  protected setupUserProfileUi(network: StartedNetwork, keycloakContainer: OneCXKeycloakContainer) {
+    const ui = new OneCXUserProfileUiContainer(containerImagesEnv.ONECX_USER_PROFILE_UI, {
+      network,
+      keycloakContainer
+    })
+    return this.addApp<OneCXUiContainer>(this.uis, ui)
+  }
+
+  protected setupIamBff(network: StartedNetwork, keycloakContainer: OneCXKeycloakContainer) {
+    const bff = new OneCXIamBffContainer(containerImagesEnv.ONECX_IAM_BFF, {
+      network,
+      keycloakContainer
+    })
+    return this.addApp<OneCXBffContainer>(this.bffs, bff)
+  }
+
+  protected setupIamUi(network: StartedNetwork, keycloakContainer: OneCXKeycloakContainer) {
+    const ui = new OneCXIamUiContainer(containerImagesEnv.ONECX_IAM_UI, {
+      network,
+      keycloakContainer
+    })
+    return this.addApp<OneCXUiContainer>(this.uis, ui)
+  }
+
+  protected setupWorkspaceBff(network: StartedNetwork, keycloakContainer: OneCXKeycloakContainer) {
+    const bff = new OneCXWorkspaceBffContainer(containerImagesEnv.ONECX_WORKSPACE_BFF, {
+      network,
+      keycloakContainer
+    })
+    return this.addApp<OneCXBffContainer>(this.bffs, bff)
+  }
+
+  protected setupWorkspaceUi(network: StartedNetwork, keycloakContainer: OneCXKeycloakContainer) {
+    const ui = new OneCXWorkspaceUiContainer(containerImagesEnv.ONECX_WORKSPACE_UI, {
+      network,
+      keycloakContainer
+    })
+    return this.addApp<OneCXUiContainer>(this.uis, ui)
   }
 }

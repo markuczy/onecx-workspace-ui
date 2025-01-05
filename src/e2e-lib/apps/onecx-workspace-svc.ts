@@ -1,4 +1,5 @@
 import { OneCXSvcContainer, OneCXSvcContainerServices } from '../abstract/onecx-svc'
+import { OneCXCoreApplication, OneCXCoreApplications } from '../model/onecx-application-type'
 
 export class OneCXWorkspaceSvcContainer extends OneCXSvcContainer {
   constructor(image: string, services: OneCXSvcContainerServices) {
@@ -7,7 +8,7 @@ export class OneCXWorkspaceSvcContainer extends OneCXSvcContainer {
       {
         name: 'onecx-workspace-svc',
         alias: 'onecx-workspace-svc',
-        applicationName: 'workspace',
+        applicationName: OneCXCoreApplications.WORKSPACE satisfies OneCXCoreApplication,
         appId: 'workspace-svc'
       },
       services

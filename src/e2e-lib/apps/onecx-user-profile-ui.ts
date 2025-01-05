@@ -1,4 +1,5 @@
 import { OneCXUiContainer, OneCXUiContainerServices } from '../abstract/onecx-ui'
+import { OneCXCoreApplication, OneCXCoreApplications } from '../model/onecx-application-type'
 
 export class OneCXUserProfileUiContainer extends OneCXUiContainer {
   constructor(image: string, services: OneCXUiContainerServices) {
@@ -7,7 +8,7 @@ export class OneCXUserProfileUiContainer extends OneCXUiContainer {
       {
         name: 'onecx-user-profile-ui',
         alias: 'onecx-user-profile-ui',
-        applicationName: 'user-profile',
+        applicationName: OneCXCoreApplications.USER_PROFILE satisfies OneCXCoreApplication,
         appId: 'user-profile-ui'
       },
       services

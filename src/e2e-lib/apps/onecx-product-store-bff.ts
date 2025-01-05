@@ -1,4 +1,5 @@
 import { OneCXBffContainer, OneCXBffContainerServices } from '../abstract/onecx-bff'
+import { OneCXCoreApplication, OneCXCoreApplications } from '../model/onecx-application-type'
 
 export class OneCXProductStoreBffContainer extends OneCXBffContainer {
   constructor(image: string, services: OneCXBffContainerServices) {
@@ -7,7 +8,7 @@ export class OneCXProductStoreBffContainer extends OneCXBffContainer {
       {
         name: 'onecx-product-store-bff',
         alias: 'onecx-product-store-bff',
-        applicationName: 'product-store',
+        applicationName: OneCXCoreApplications.PRODUCT_STORE satisfies OneCXCoreApplication,
         appId: 'product-store-bff'
       },
       services

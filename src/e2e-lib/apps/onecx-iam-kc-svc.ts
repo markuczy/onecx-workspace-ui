@@ -1,10 +1,16 @@
 import { OneCXSvcContainer, OneCXSvcContainerServices } from '../abstract/onecx-svc'
+import { OneCXCoreApplication, OneCXCoreApplications } from '../model/onecx-application-type'
 
 export class OneCXIamKcSvcContainer extends OneCXSvcContainer {
   constructor(image: string, services: OneCXSvcContainerServices) {
     super(
       image,
-      { name: 'onecx-iam-kc-svc', alias: 'onecx-iam-kc-svc', applicationName: 'iam', appId: 'iam-kc-svc' },
+      {
+        name: 'onecx-iam-kc-svc',
+        alias: 'onecx-iam-kc-svc',
+        applicationName: OneCXCoreApplications.IAM satisfies OneCXCoreApplication,
+        appId: 'iam-kc-svc'
+      },
       services
     )
 

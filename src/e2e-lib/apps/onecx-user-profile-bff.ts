@@ -1,4 +1,5 @@
 import { OneCXBffContainer, OneCXBffContainerServices } from '../abstract/onecx-bff'
+import { OneCXCoreApplication, OneCXCoreApplications } from '../model/onecx-application-type'
 
 export class OneCXUserProfileBffContainer extends OneCXBffContainer {
   constructor(image: string, services: OneCXBffContainerServices) {
@@ -7,7 +8,7 @@ export class OneCXUserProfileBffContainer extends OneCXBffContainer {
       {
         name: 'onecx-user-profile-bff',
         alias: 'onecx-user-profile-bff',
-        applicationName: 'user-profile',
+        applicationName: OneCXCoreApplications.USER_PROFILE satisfies OneCXCoreApplication,
         appId: 'user-profile-bff'
       },
       services

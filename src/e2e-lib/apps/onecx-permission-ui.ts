@@ -1,4 +1,5 @@
 import { OneCXUiContainer, OneCXUiContainerServices } from '../abstract/onecx-ui'
+import { OneCXCoreApplication, OneCXCoreApplications } from '../model/onecx-application-type'
 
 export class OneCXPermissionUiContainer extends OneCXUiContainer {
   constructor(image: string, services: OneCXUiContainerServices) {
@@ -7,7 +8,7 @@ export class OneCXPermissionUiContainer extends OneCXUiContainer {
       {
         name: 'onecx-permission-ui',
         alias: 'onecx-permission-ui',
-        applicationName: 'permission',
+        applicationName: OneCXCoreApplications.PERMISSION satisfies OneCXCoreApplication,
         appId: 'permission-ui'
       },
       services
