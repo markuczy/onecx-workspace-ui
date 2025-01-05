@@ -1,7 +1,7 @@
 import { StartedNetwork } from 'testcontainers'
 import { OneCXAppContainer, StartedOneCXAppContainer } from './onecx-app'
 import { OneCXCoreApplication } from '../model/onecx-application-type'
-import { StartedOneCXKeycloakContainer } from '../core/onecx-keycloak'
+import { OneCXKeycloakContainer, StartedOneCXKeycloakContainer } from '../core/onecx-keycloak'
 import { commonEnv } from '../constants/e2e-config'
 
 export interface OneCXUiContainerDetails {
@@ -13,7 +13,7 @@ export interface OneCXUiContainerDetails {
 
 export interface OneCXUiContainerServices {
   network: StartedNetwork
-  keycloakContainer: StartedOneCXKeycloakContainer
+  keycloakContainer: StartedOneCXKeycloakContainer | OneCXKeycloakContainer
 }
 
 export class OneCXUiContainer extends OneCXAppContainer {

@@ -1,6 +1,6 @@
 import { StartedNetwork, StartedTestContainer } from 'testcontainers'
 import { commonEnv } from '../constants/e2e-config'
-import { OneCXContainer, StartedOneCXContainer } from '../abstract/onecx-container'
+import { IOneCXContainer, OneCXContainer, StartedOneCXContainer } from '../abstract/onecx-container'
 import { StartedOneCXPostgresContainer } from './onecx-postgres'
 
 export interface OneCXKeycloakDetails {
@@ -10,8 +10,15 @@ export interface OneCXKeycloakDetails {
   adminPassword: string
 }
 
-export class OneCXKeycloakContainer extends OneCXContainer {
-  private onecxStartCommand: string[]
+export interface IOneCXKeycloakContainer extends IOneCXContainer {
+  getOneCXRealm(): string
+  getOneCXAdminRealm(): string
+  getOneCXAdminUsername(): string
+  getOneCXAdminPassword(): string
+}
+
+export class OneCXKeycloakContainer extends OneCXContainer implements IOneCXKeycloakContainer {
+  private onecxStartCommand: string[] = ['start-dev', '--import-realm']
   private onecxKeycloakDetails: OneCXKeycloakDetails = {
     onecxRealm: commonEnv.KC_REALM,
     adminRealm: 'master',
@@ -23,7 +30,7 @@ export class OneCXKeycloakContainer extends OneCXContainer {
   constructor(
     image: string,
     network: StartedNetwork,
-    private readonly databaseContainer: StartedOneCXPostgresContainer,
+    private readonly databaseContainer: IOneCXContainer,
     private readonly initDataPath?: string
   ) {
     const name = 'keycloak-app'
@@ -58,18 +65,17 @@ export class OneCXKeycloakContainer extends OneCXContainer {
         timeout: 5_000,
         retries: 10
       })
-      .withOneCXStartCommand(['start-dev', '--import-realm'])
       .withOneCXExposedPort(port)
   }
 
-  public withOneCXAlias(alias: string): this {
+  public override withOneCXAlias(alias: string): this {
     super.withOneCXAlias(alias)
 
     this.updateEnv()
     return this
   }
 
-  public withOneCXExposedPort(port: number): this {
+  public override withOneCXExposedPort(port: number): this {
     super.withOneCXExposedPort(port)
 
     this.updateEnv()
@@ -83,10 +89,6 @@ export class OneCXKeycloakContainer extends OneCXContainer {
     return this
   }
 
-  public getOneCXStartCommand() {
-    return this.onecxStartCommand
-  }
-
   public withOneCXStartupTimeout(timeout: number) {
     this.onecxStartTimeout = timeout
   }
@@ -94,10 +96,6 @@ export class OneCXKeycloakContainer extends OneCXContainer {
   public withOneCXRealm(realm: string) {
     this.onecxKeycloakDetails.onecxRealm = realm
     return this
-  }
-
-  public getOneCXRealm() {
-    return this.onecxKeycloakDetails.onecxRealm
   }
 
   public withOneCXAdminRealm(realm: string) {
@@ -115,7 +113,27 @@ export class OneCXKeycloakContainer extends OneCXContainer {
     return this
   }
 
-  async start(): Promise<StartedOneCXKeycloakContainer> {
+  public getOneCXStartCommand() {
+    return this.onecxStartCommand
+  }
+
+  public getOneCXRealm() {
+    return this.onecxKeycloakDetails.onecxRealm
+  }
+
+  public getOneCXAdminRealm() {
+    return this.onecxKeycloakDetails.adminRealm
+  }
+
+  public getOneCXAdminUsername() {
+    return this.onecxKeycloakDetails.adminUsername
+  }
+
+  public getOneCXAdminPassword() {
+    return this.onecxKeycloakDetails.adminPassword
+  }
+
+  override async start(): Promise<StartedOneCXKeycloakContainer> {
     this.withCommand(this.onecxStartCommand).withStartupTimeout(this.onecxStartTimeout)
 
     if (this.initDataPath) {
@@ -170,7 +188,7 @@ export class OneCXKeycloakContainer extends OneCXContainer {
   }
 }
 
-export class StartedOneCXKeycloakContainer extends StartedOneCXContainer {
+export class StartedOneCXKeycloakContainer extends StartedOneCXContainer implements IOneCXKeycloakContainer {
   constructor(
     startedTestContainer: StartedTestContainer,
     name: string,

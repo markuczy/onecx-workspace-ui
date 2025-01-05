@@ -1,9 +1,9 @@
 import { StartedNetwork } from 'testcontainers'
-import { OneCXAppContainer, StartedOneCXAppContainer } from './onecx-app'
+import { IOneCXAppContainer, OneCXAppContainer, StartedOneCXAppContainer } from './onecx-app'
 import { commonEnv, svcEnv } from '../constants/e2e-config'
 import { OneCXCoreApplication } from '../model/onecx-application-type'
-import { StartedOneCXPostgresContainer } from '../core/onecx-postgres'
-import { StartedOneCXKeycloakContainer } from '../core/onecx-keycloak'
+import { IOneCXKeycloakContainer } from '../core/onecx-keycloak'
+import { IOneCXContainer } from './onecx-container'
 
 export interface OneCXSvcContainerDetails {
   name: string
@@ -14,13 +14,17 @@ export interface OneCXSvcContainerDetails {
 
 export interface OneCXSvcContainerServices {
   network: StartedNetwork
-  databaseContainer: StartedOneCXPostgresContainer
-  keycloakContainer: StartedOneCXKeycloakContainer
+  databaseContainer: IOneCXContainer
+  keycloakContainer: IOneCXKeycloakContainer
+}
+
+export interface IOneCXSvcContainer extends IOneCXAppContainer {
+  getOneCXKeycloakContainer(): IOneCXKeycloakContainer
 }
 
 export class OneCXSvcContainer extends OneCXAppContainer {
-  private databaseContainer: StartedOneCXPostgresContainer
-  private keycloakContainer: StartedOneCXKeycloakContainer
+  private databaseContainer: IOneCXContainer
+  private keycloakContainer: IOneCXKeycloakContainer
 
   constructor(image: string, details: OneCXSvcContainerDetails, services: OneCXSvcContainerServices) {
     super(
@@ -35,8 +39,8 @@ export class OneCXSvcContainer extends OneCXAppContainer {
       services.network
     )
 
-    this.keycloakContainer = services.keycloakContainer
     this.databaseContainer = services.databaseContainer
+    this.keycloakContainer = services.keycloakContainer
 
     this.withOneCXEnvironment({
       ...this.getOneCXEnvironment(),
@@ -55,12 +59,12 @@ export class OneCXSvcContainer extends OneCXAppContainer {
       .withOneCXExposedPort(8080)
   }
 
-  public getOneCXDatabaseContainer() {
-    return this.databaseContainer
-  }
-
   public getOneCXKeycloakContainer() {
     return this.keycloakContainer
+  }
+
+  public getOneCXDatabaseContainer() {
+    return this.databaseContainer
   }
 }
 

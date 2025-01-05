@@ -2,7 +2,7 @@ import { StartedNetwork, StartedTestContainer } from 'testcontainers'
 import { OneCXContainer, StartedOneCXContainer } from '../abstract/onecx-container'
 
 export class OneCXPostgresContainer extends OneCXContainer {
-  private onecxStartCommand: string[]
+  private onecxStartCommand: string[] = ['-cmax_prepared_transactions=100']
 
   constructor(
     image: string,
@@ -22,7 +22,6 @@ export class OneCXPostgresContainer extends OneCXContainer {
         timeout: 5_000,
         retries: 3
       })
-      .withOneCXStartCommand(['-cmax_prepared_transactions=100'])
       .withOneCXExposedPort(5432)
   }
 
@@ -35,7 +34,7 @@ export class OneCXPostgresContainer extends OneCXContainer {
     return this.onecxStartCommand
   }
 
-  async start(): Promise<StartedOneCXPostgresContainer> {
+  override async start(): Promise<StartedOneCXPostgresContainer> {
     this.withCommand(this.onecxStartCommand)
 
     if (this.initDataPath) {

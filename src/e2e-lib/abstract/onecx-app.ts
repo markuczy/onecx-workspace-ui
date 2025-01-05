@@ -1,5 +1,5 @@
 import { StartedNetwork, StartedTestContainer } from 'testcontainers'
-import { OneCXContainer, StartedOneCXContainer } from './onecx-container'
+import { IOneCXContainer, OneCXContainer, StartedOneCXContainer } from './onecx-container'
 import { OneCXAppType } from '../model/onecx-app-type'
 import { OneCXCoreApplication } from '../model/onecx-application-type'
 
@@ -9,7 +9,13 @@ export interface OneCXAppDetails {
   appId: string
 }
 
-export class OneCXAppContainer extends OneCXContainer {
+export interface IOneCXAppContainer extends IOneCXContainer {
+  getOneCXAppType(): OneCXAppType
+  getOneCXApplicationName(): OneCXCoreApplication | string
+  getOneCXAppId(): string
+}
+
+export class OneCXAppContainer extends OneCXContainer implements IOneCXAppContainer {
   private onecxAppDetails: OneCXAppDetails
   constructor(image: string, name: string, alias: string, appDetails: OneCXAppDetails, network: StartedNetwork) {
     super(image, name, alias, network)
@@ -17,11 +23,19 @@ export class OneCXAppContainer extends OneCXContainer {
     this.onecxAppDetails = appDetails
   }
 
-  public getOneCXAppDetails() {
-    return this.onecxAppDetails
+  public getOneCXAppType() {
+    return this.onecxAppDetails.appType
   }
 
-  public async start(): Promise<StartedOneCXAppContainer> {
+  public getOneCXApplicationName() {
+    return this.onecxAppDetails.applicationName
+  }
+
+  public getOneCXAppId() {
+    return this.onecxAppDetails.appId
+  }
+
+  public override async start(): Promise<StartedOneCXAppContainer> {
     return new StartedOneCXAppContainer(
       await super.start(),
       this.onecxAppDetails,
@@ -33,7 +47,7 @@ export class OneCXAppContainer extends OneCXContainer {
   }
 }
 
-export class StartedOneCXAppContainer extends StartedOneCXContainer {
+export class StartedOneCXAppContainer extends StartedOneCXContainer implements IOneCXAppContainer {
   constructor(
     startedTestContainer: StartedTestContainer,
     private readonly onecxAppDetails: OneCXAppDetails,

@@ -2,7 +2,7 @@ import { StartedNetwork } from 'testcontainers'
 import { OneCXAppContainer, StartedOneCXAppContainer } from './onecx-app'
 import { bffEnv, commonEnv } from '../constants/e2e-config'
 import { OneCXCoreApplication } from '../model/onecx-application-type'
-import { StartedOneCXKeycloakContainer } from '../core/onecx-keycloak'
+import { OneCXKeycloakContainer, StartedOneCXKeycloakContainer } from '../core/onecx-keycloak'
 
 export interface OneCXBffContainerDetails {
   name: string
@@ -13,7 +13,7 @@ export interface OneCXBffContainerDetails {
 
 export interface OneCXBffContainerServices {
   network: StartedNetwork
-  keycloakContainer: StartedOneCXKeycloakContainer
+  keycloakContainer: StartedOneCXKeycloakContainer | OneCXKeycloakContainer
 }
 
 export class OneCXBffContainer extends OneCXAppContainer {

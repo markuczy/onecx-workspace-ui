@@ -2,8 +2,15 @@ import { AbstractStartedContainer, GenericContainer, StartedNetwork, StartedTest
 import { HealthCheck } from 'testcontainers/build/types'
 import { ContainerEnv } from '../model/container-env'
 
+export interface IOneCXContainer {
+  getOneCXName(): string
+  getOneCXAlias(): string
+  getOneCXExposedPort(): number | undefined
+  getOneCXNetwork(): StartedNetwork
+}
+
 // TODO: Configure log consumer
-export class OneCXContainer extends GenericContainer {
+export class OneCXContainer extends GenericContainer implements IOneCXContainer {
   private onecxEnv: ContainerEnv | undefined
   private onecxHealthCheck: HealthCheck | undefined
   private onecxExposedPort: number | undefined
@@ -25,6 +32,21 @@ export class OneCXContainer extends GenericContainer {
     this.alias = alias
   }
 
+  public withOneCXEnvironment(env: ContainerEnv) {
+    this.onecxEnv = env
+    return this
+  }
+
+  public withOneCXHealthCheck(healthCheck: HealthCheck) {
+    this.onecxHealthCheck = healthCheck
+    return this
+  }
+
+  public withOneCXExposedPort(port: number) {
+    this.onecxExposedPort = port
+    return this
+  }
+
   public getOneCXName() {
     return this.name
   }
@@ -33,27 +55,12 @@ export class OneCXContainer extends GenericContainer {
     return this.alias
   }
 
-  public withOneCXEnvironment(env: ContainerEnv) {
-    this.onecxEnv = env
-    return this
-  }
-
   public getOneCXEnvironment() {
     return this.onecxEnv
   }
 
-  public withOneCXHealthCheck(healthCheck: HealthCheck) {
-    this.onecxHealthCheck = healthCheck
-    return this
-  }
-
   public getOneCXHealthCheck() {
     return this.onecxHealthCheck
-  }
-
-  public withOneCXExposedPort(port: number) {
-    this.onecxExposedPort = port
-    return this
   }
 
   public getOneCXExposedPort() {
@@ -64,7 +71,7 @@ export class OneCXContainer extends GenericContainer {
     return this.network
   }
 
-  public async start(): Promise<StartedOneCXContainer> {
+  public override async start(): Promise<StartedOneCXContainer> {
     this.log('Starting container')
 
     this.name &&
@@ -94,7 +101,7 @@ export class OneCXContainer extends GenericContainer {
   }
 }
 
-export class StartedOneCXContainer extends AbstractStartedContainer {
+export class StartedOneCXContainer extends AbstractStartedContainer implements IOneCXContainer {
   constructor(
     startedTestContainer: StartedTestContainer,
     private readonly onecxName: string,

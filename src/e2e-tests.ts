@@ -1,4 +1,4 @@
-import { GenericContainer, StartedNetwork, StartedTestContainer } from 'testcontainers'
+import { GenericContainer, StartedNetwork, StartedTestContainer, Network } from 'testcontainers'
 import * as path from 'path'
 import * as fs from 'fs'
 import { exit } from 'process'
@@ -102,94 +102,50 @@ async function setupCypressContainer(network: StartedNetwork) {
   return cypressContainer
 }
 
-function setupWorkspaceBff(network: StartedNetwork, keycloakContainer: StartedOneCXKeycloakContainer) {
-  return new OneCXWorkspaceBffContainer(containerImagesEnv.ONECX_WORKSPACE_BFF, {
-    network,
-    keycloakContainer
-  })
-}
-
-function setupWorkspaceUi(network: StartedNetwork, keycloakContainer: StartedOneCXKeycloakContainer) {
-  return new OneCXWorkspaceUiContainer(containerImagesEnv.ONECX_WORKSPACE_UI, { network, keycloakContainer })
-}
-
-function setupWorkspaceSvc(
-  network: StartedNetwork,
-  databaseContainer: StartedOneCXPostgresContainer,
-  keycloakContainer: StartedOneCXKeycloakContainer
-) {
-  return new OneCXWorkspaceSvcContainer(containerImagesEnv.ONECX_WORKSPACE_SVC, {
-    network,
-    databaseContainer,
-    keycloakContainer
-  })
-}
-
-function setupThemeSvc(
-  network: StartedNetwork,
-  databaseContainer: StartedOneCXPostgresContainer,
-  keycloakContainer: StartedOneCXKeycloakContainer
-) {
-  return new OneCXThemeSvcContainer('ghcr.io/onecx/onecx-theme-svc:1.3.0', {
-    network,
-    databaseContainer,
-    keycloakContainer
-  })
-}
-
-function setupShellUi(network: StartedNetwork, keycloakContainer: StartedOneCXKeycloakContainer) {
-  return new OneCXShellUiContainer('ghcr.io/onecx/onecx-shell-ui:1.5.0', { network, keycloakContainer })
-}
-
 async function runTests() {
-  let oneCXEnv: OneCXEnvironment = new OneCXEnvironment().withOneCXNamePrefix('workspace-e2e_')
+  let oneCXEnv: OneCXEnvironment = new OneCXEnvironment(await new Network().start()).withOneCXNamePrefix(
+    'workspace-e2e_'
+  )
   try {
-    // Prepare core containers and network
-    oneCXEnv = await oneCXEnv.startNetwork()
-    oneCXEnv = await oneCXEnv.startDatabase()
-    oneCXEnv = await oneCXEnv.startKeycloak()
+    oneCXEnv = await oneCXEnv
+      .withOneCXBff(
+        new OneCXWorkspaceBffContainer(containerImagesEnv.ONECX_WORKSPACE_BFF, {
+          network: oneCXEnv.getOneCXNetwork(),
+          keycloakContainer: oneCXEnv.getOneCXKeycloak()
+        })
+      )
+      .withOneCXUi(
+        new OneCXWorkspaceUiContainer(containerImagesEnv.ONECX_WORKSPACE_UI, {
+          network: oneCXEnv.getOneCXNetwork(),
+          keycloakContainer: oneCXEnv.getOneCXKeycloak()
+        })
+      )
+      .withOneCXService(
+        new OneCXWorkspaceSvcContainer(containerImagesEnv.ONECX_WORKSPACE_SVC, {
+          network: oneCXEnv.getOneCXNetwork(),
+          keycloakContainer: oneCXEnv.getOneCXKeycloak(),
+          databaseContainer: oneCXEnv.getOneCXDatabase()
+        })
+      )
+      .withOneCXService(
+        new OneCXThemeSvcContainer('ghcr.io/onecx/onecx-theme-svc:1.3.0', {
+          network: oneCXEnv.getOneCXNetwork(),
+          keycloakContainer: oneCXEnv.getOneCXKeycloak(),
+          databaseContainer: oneCXEnv.getOneCXDatabase()
+        })
+      )
+      .withOneCXUi(
+        new OneCXShellUiContainer('ghcr.io/onecx/onecx-shell-ui:1.5.0', {
+          network: oneCXEnv.getOneCXNetwork(),
+          keycloakContainer: oneCXEnv.getOneCXKeycloak()
+        })
+      )
+      .start({
+        importData: true
+      })
   } catch (e) {
     if (e instanceof ContainerStartError) {
-      console.error(`Error while starting core environment and network: ${e.message}. Caused by: ${e.cause}`)
-    }
-    exit(1)
-  }
-
-  const network = oneCXEnv.getOneCXNetwork()
-  const db = oneCXEnv.getOneCXDatabase()
-  const keycloak = oneCXEnv.getOneCXKeycloak()
-  if (!network) {
-    console.error('Network is not started.')
-    exit(1)
-  }
-  if (!db) {
-    console.error('Database is not started.')
-    exit(1)
-  }
-  if (!keycloak) {
-    console.error('Keycloak is not started.')
-    exit(1)
-  }
-
-  // Prepare environment with extended services definitions
-  const workspaceBff = setupWorkspaceBff(network, keycloak)
-  const workspaceUi = setupWorkspaceUi(network, keycloak)
-  const workspaceSvc = setupWorkspaceSvc(network, db, keycloak)
-  const themeSvc = setupThemeSvc(network, db, keycloak)
-  const myShellUi = setupShellUi(network, keycloak)
-
-  try {
-    // Prepare applications
-    oneCXEnv = oneCXEnv
-      .withOneCXBff(workspaceBff)
-      .withOneCXUi(workspaceUi)
-      .withOneCXService(workspaceSvc)
-      .withOneCXService(themeSvc)
-      .withOneCXUi(myShellUi)
-    oneCXEnv = await oneCXEnv.startApplications()
-  } catch (e) {
-    if (e instanceof ContainerStartError) {
-      console.error(`Error while starting applications: ${e.message}. Caused by: ${e.cause}`)
+      console.error(`Error while starting OneCX environment: ${e.message}. Caused by: ${e.cause}`)
     }
     exit(1)
   }
@@ -207,12 +163,12 @@ async function runTests() {
   console.log('starting e2e tests')
   let cypressContainer: StartedTestContainer | undefined
   try {
-    cypressContainer = await setupCypressContainer(network)
+    cypressContainer = await setupCypressContainer(oneCXEnv.getOneCXNetwork())
     const testExec = await cypressContainer.exec([
       'cypress',
       'run',
       '--env',
-      `SHELL_ADDRESS=${shellUiContainer.getOneCXAlias()}:${shellUiContainer.getOneCXExposedPort()},KEYCLOAK_ADDRESS=${keycloak.getOneCXAlias()}:${keycloak.getOneCXExposedPort()}`
+      `SHELL_ADDRESS=${shellUiContainer.getOneCXAlias()}:${shellUiContainer.getOneCXExposedPort()},KEYCLOAK_ADDRESS=${oneCXEnv.getOneCXKeycloak().getOneCXAlias()}:${oneCXEnv.getOneCXKeycloak().getOneCXExposedPort()}`
     ])
 
     if (testExec.exitCode != 0) testResult = 'fail'
