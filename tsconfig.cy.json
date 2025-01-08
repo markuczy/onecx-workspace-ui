@@ -1,0 +1,15 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "composite": false,
+    "declaration": false,
+    "outDir": "./dist/cy",
+    "module": "commonjs",
+    "types": ["cypress"],
+    "target": "ES2022",
+    "useDefineForClassFields": false
+  },
+  "files": [],
+  "exclude": [],
+  "include": ["**/*.cy.ts"]
+}

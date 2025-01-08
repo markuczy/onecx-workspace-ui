@@ -5,5 +5,10 @@ on:
 
 jobs:
   pr:
-    uses: onecx/ci-angular/.github/workflows/build-pr.yml@v1
+    runs-on: ubuntu-latest
+    steps:
+      - name: Log
+        run: echo "Running my job"
+  e2e-tests:
+    uses: ./.github/workflows/prepare-and-run-e2e-tests.yml # TODO: Remove and use the build-pr workflow
     secrets: inherit
