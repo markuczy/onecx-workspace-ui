@@ -12,6 +12,8 @@ import { OneCXThemeSvcContainer } from './e2e-lib/apps/onecx-theme-svc'
 import { OneCXExtendedSetup } from './e2e-lib/core/onecx-setup'
 import { OneCXCoreApplications } from './e2e-lib/model/onecx-application-type'
 import { OneCXBaseRunner } from './e2e-lib/core/onecx-runner'
+import { OneCXPostgresContainer } from './e2e-lib/core/onecx-postgres'
+import { OneCXKeycloakContainer } from './e2e-lib/core/onecx-keycloak'
 
 // TODO: copy essential files only
 async function setupCypressContainer(network: StartedNetwork) {
@@ -49,6 +51,19 @@ async function runTests() {
       namePrefix: 'e2e_workspace_'
     }),
     new OneCXBaseRunner()
+  )
+
+  oneCXEnv = oneCXEnv.withOneCXDatabase(
+    new OneCXPostgresContainer(containerImagesEnv.POSTGRES, oneCXEnv.getOneCXNetwork()).withOneCXInitPath(
+      path.resolve('e2e-tests/init-data/db-2')
+    )
+  )
+  oneCXEnv = oneCXEnv.withOneCXKeycloak(
+    new OneCXKeycloakContainer(
+      containerImagesEnv.KEYCLOAK,
+      oneCXEnv.getOneCXNetwork(),
+      oneCXEnv.getOneCXDatabase()
+    ).withOneCXInitPath('e2e-tests/init-data/keycloak/imports-2')
   )
   let startedOneCXEnv: StartedOneCXEnvironment
   try {

@@ -1,14 +1,15 @@
 import { StartedNetwork, StartedTestContainer } from 'testcontainers'
 import { OneCXContainer, StartedOneCXContainer } from '../abstract/onecx-container'
+import path from 'path'
 
 export class OneCXPostgresContainer extends OneCXContainer {
   private onecxStartCommand: string[] = ['-cmax_prepared_transactions=100']
+  private initDataPaths: string[] = []
+  // TODO: Change path once migrated
+  private defaultInitDataPath = 'e2e-tests/init-data/db'
+  private defaultInitEnabled = true
 
-  constructor(
-    image: string,
-    network: StartedNetwork,
-    private readonly initDataPath?: string
-  ) {
+  constructor(image: string, network: StartedNetwork) {
     super(image, 'postgresdb', 'postgresdb', network)
 
     this.withOneCXEnvironment({
@@ -30,6 +31,16 @@ export class OneCXPostgresContainer extends OneCXContainer {
     return this
   }
 
+  public withOneCXDefaultInitEnabled(enabled: boolean) {
+    this.defaultInitEnabled = enabled
+    return this
+  }
+
+  public withOneCXInitPath(path: string) {
+    this.initDataPaths.push(path)
+    return this
+  }
+
   public getOneCXStartCommand() {
     return this.onecxStartCommand
   }
@@ -37,10 +48,12 @@ export class OneCXPostgresContainer extends OneCXContainer {
   override async start(): Promise<StartedOneCXPostgresContainer> {
     this.withCommand(this.onecxStartCommand)
 
-    if (this.initDataPath) {
+    this.defaultInitEnabled && this.initDataPaths.push(this.defaultInitDataPath)
+
+    for (const p of this.initDataPaths) {
       this.withCopyDirectoriesToContainer([
         {
-          source: this.initDataPath,
+          source: path.resolve(p),
           target: '/docker-entrypoint-initdb.d/'
         }
       ])

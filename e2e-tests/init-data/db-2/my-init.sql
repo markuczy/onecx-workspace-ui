@@ -1,0 +1,3 @@
+CREATE USER onecx_test WITH ENCRYPTED PASSWORD 'onecx_test';
+CREATE DATABASE onecx_test;
+GRANT ALL PRIVILEGES ON DATABASE onecx_test TO onecx_test;

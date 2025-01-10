@@ -1,6 +1,7 @@
 import { StartedNetwork, StartedTestContainer } from 'testcontainers'
 import { commonEnv } from '../constants/e2e-config'
 import { OneCXContainer, StartedOneCXContainer } from '../abstract/onecx-container'
+import path from 'path'
 
 export interface OneCXKeycloakDetails {
   onecxRealm: string
@@ -18,12 +19,15 @@ export class OneCXKeycloakContainer extends OneCXContainer {
     adminPassword: 'admin'
   }
   private onecxStartTimeout: number = 100_000
+  private initDataPaths: string[] = []
+  // TODO: Change path once migrated
+  private defaultInitDataPath = 'e2e-tests/init-data/keycloak/imports'
+  private defaultInitEnabled = true
 
   constructor(
     image: string,
     network: StartedNetwork,
-    private readonly databaseContainer: OneCXContainer | StartedOneCXContainer,
-    private readonly initDataPath?: string
+    private readonly databaseContainer: OneCXContainer | StartedOneCXContainer
   ) {
     const name = 'keycloak-app'
     const alias = 'keycloak-app'
@@ -105,6 +109,16 @@ export class OneCXKeycloakContainer extends OneCXContainer {
     return this
   }
 
+  public withOneCXDefaultInitEnabled(enabled: boolean) {
+    this.defaultInitEnabled = enabled
+    return this
+  }
+
+  public withOneCXInitPath(path: string) {
+    this.initDataPaths.push(path)
+    return this
+  }
+
   public getOneCXStartCommand() {
     return this.onecxStartCommand
   }
@@ -128,10 +142,12 @@ export class OneCXKeycloakContainer extends OneCXContainer {
   override async start(): Promise<StartedOneCXKeycloakContainer> {
     this.withCommand(this.onecxStartCommand).withStartupTimeout(this.onecxStartTimeout)
 
-    if (this.initDataPath) {
+    this.defaultInitEnabled && this.initDataPaths.push(this.defaultInitDataPath)
+
+    for (const p of this.initDataPaths) {
       this.withCopyDirectoriesToContainer([
         {
-          source: this.initDataPath,
+          source: path.resolve(p),
           target: '/opt/keycloak/data/import'
         }
       ])

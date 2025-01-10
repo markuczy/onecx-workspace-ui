@@ -116,21 +116,14 @@ export class OneCXBaseSetup implements OneCXSetup {
     coreApps.forEach((app) => this.coreApps.add(app))
   }
 
-  // TODO: There should be default db data and path to it
   protected setupDatabase(network: StartedNetwork) {
-    const db = new OneCXPostgresContainer(containerImagesEnv.POSTGRES, network, path.resolve('e2e-tests/init-data/db'))
+    const db = new OneCXPostgresContainer(containerImagesEnv.POSTGRES, network)
 
     return this.prefixedContainer(db)
   }
 
-  // TODO: There should be default db data and path to it
   protected setupKeycloak(network: StartedNetwork, databaseContainer: OneCXPostgresContainer) {
-    const keycloak = new OneCXKeycloakContainer(
-      containerImagesEnv.KEYCLOAK,
-      network,
-      databaseContainer,
-      path.resolve('e2e-tests/init-data/keycloak/imports')
-    )
+    const keycloak = new OneCXKeycloakContainer(containerImagesEnv.KEYCLOAK, network, databaseContainer)
 
     return this.prefixedContainer(keycloak)
   }
