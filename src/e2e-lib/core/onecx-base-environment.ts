@@ -9,107 +9,6 @@ import { importDatabaseData } from '../utils/utils'
 import { OneCXSetup } from './onecx-setup'
 import { OneCXRunner, OneCXRunnerStartParams } from './onecx-runner'
 
-export class StartedOneCXEnvironment {
-  constructor(
-    private readonly network: StartedNetwork,
-    private readonly database: StartedOneCXPostgresContainer,
-    private readonly keycloak: StartedOneCXKeycloakContainer,
-    private readonly services: Array<StartedOneCXSvcContainer>,
-    private readonly bffs: Array<StartedOneCXBffContainer>,
-    private readonly uis: Array<StartedOneCXUiContainer>
-  ) {}
-
-  public getOneCXStartedDatabase() {
-    return this.database
-  }
-
-  public getOneCXStartedKeycloak() {
-    return this.keycloak
-  }
-
-  public getOneCXStartedServices() {
-    return this.services
-  }
-
-  public getOneCXStartedBffs() {
-    return this.bffs
-  }
-
-  public getOneCXStartedUis() {
-    return this.uis
-  }
-
-  public getOneCXStartedService(appId: string) {
-    return this.services.find((svc) => svc.getOneCXAppId() === appId)
-  }
-
-  public getOneCXStartedBff(appId: string) {
-    return this.bffs.find((bff) => bff.getOneCXAppId() === appId)
-  }
-
-  public getOneCXStartedUi(appId: string) {
-    return this.uis.find((ui) => ui.getOneCXAppId() === appId)
-  }
-
-  public getOneCXShellUi() {
-    return this.uis.find((ui) => ui.getOneCXAppId() === 'shell-ui')
-  }
-
-  public async teardown() {
-    this.log('Starting teardown')
-
-    this.database && (await this.database.stop())
-    this.database && this.log(`${this.database.getOneCXAlias()} stopped`)
-
-    this.keycloak && (await this.keycloak.stop())
-    this.keycloak && this.log(`${this.keycloak.getOneCXAlias()} stopped`)
-
-    await Promise.all([
-      ...this.services.map((svc) => {
-        return svc.stop().then(() => this.log(`${svc.getOneCXAlias()} stopped`))
-      }),
-      ...this.bffs.map((bff) => {
-        return bff.stop().then(() => this.log(`${bff.getOneCXAlias()} stopped`))
-      }),
-      ...this.uis.map((ui) => {
-        return ui.stop().then(() => this.log(`${ui.getOneCXAlias()} stopped`))
-      })
-    ]).then(() => {
-      this.log('All applications stopped')
-    })
-
-    this.network && (await this.network.stop())
-    this.log(`Network stopped`)
-
-    this.log('Finished teardown')
-  }
-
-  // TODO: There should be default db data and path to it
-  // TODO: Handle failed import
-  public async importData() {
-    await importDatabaseData(
-      {
-        THEME_SVC_PORT: this.getOneCXStartedService('theme-svc')?.getMappedPort(8080) ?? -1,
-        PERMISSION_SVC_PORT: this.getOneCXStartedService('permission-svc')?.getMappedPort(8080) ?? -1,
-        PRODUCT_STORE_SVC_PORT: this.getOneCXStartedService('product-store-svc')?.getMappedPort(8080) ?? -1,
-        USER_PROFILE_SVC_PORT: this.getOneCXStartedService('user-profile-svc')?.getMappedPort(8080) ?? -1,
-        IAM_KC_SVC_PORT: this.getOneCXStartedService('iam-kc-svc')?.getMappedPort(8080) ?? -1,
-        TENANT_SVC_PORT: this.getOneCXStartedService('tenant-svc')?.getMappedPort(8080) ?? -1,
-        WORKSPACE_SVC_PORT: this.getOneCXStartedService('workspace-svc')?.getMappedPort(8080) ?? -1
-      },
-      path.resolve('e2e-tests/import-onecx.sh')
-    )
-  }
-
-  private log(message: string) {
-    console.log(`StartedOneCXEnvironment: ${message}`)
-  }
-
-  private error(message: string) {
-    console.error(`StartedOneCXEnvironment: ${message}`)
-  }
-}
-
 export class OneCXEnvironment {
   constructor(
     private readonly network: StartedNetwork,
@@ -180,5 +79,78 @@ export class OneCXEnvironment {
 
   public async start(params: OneCXRunnerStartParams): Promise<StartedOneCXEnvironment> {
     return this.runner.start(this.setup, params)
+  }
+}
+
+export class StartedOneCXEnvironment {
+  constructor(
+    private readonly runner: OneCXRunner,
+    private readonly network: StartedNetwork,
+    private readonly database: StartedOneCXPostgresContainer,
+    private readonly keycloak: StartedOneCXKeycloakContainer,
+    private readonly services: Array<StartedOneCXSvcContainer>,
+    private readonly bffs: Array<StartedOneCXBffContainer>,
+    private readonly uis: Array<StartedOneCXUiContainer>
+  ) {}
+
+  public getOneCXNetwork() {
+    return this.network
+  }
+
+  public getOneCXStartedDatabase() {
+    return this.database
+  }
+
+  public getOneCXStartedKeycloak() {
+    return this.keycloak
+  }
+
+  public getOneCXStartedServices() {
+    return this.services
+  }
+
+  public getOneCXStartedBffs() {
+    return this.bffs
+  }
+
+  public getOneCXStartedUis() {
+    return this.uis
+  }
+
+  public getOneCXStartedService(appId: string) {
+    return this.services.find((svc) => svc.getOneCXAppId() === appId)
+  }
+
+  public getOneCXStartedBff(appId: string) {
+    return this.bffs.find((bff) => bff.getOneCXAppId() === appId)
+  }
+
+  public getOneCXStartedUi(appId: string) {
+    return this.uis.find((ui) => ui.getOneCXAppId() === appId)
+  }
+
+  public getOneCXShellUi() {
+    return this.uis.find((ui) => ui.getOneCXAppId() === 'shell-ui')
+  }
+
+  public async teardown() {
+    await this.runner.teardown(this)
+  }
+
+  // TODO: There should be default db data and path to it
+  // TODO: Handle failed import
+  public async importData() {
+    await importDatabaseData(
+      {
+        THEME_SVC_PORT: this.getOneCXStartedService('theme-svc')?.getMappedPort(8080) ?? -1,
+        PERMISSION_SVC_PORT: this.getOneCXStartedService('permission-svc')?.getMappedPort(8080) ?? -1,
+        PRODUCT_STORE_SVC_PORT: this.getOneCXStartedService('product-store-svc')?.getMappedPort(8080) ?? -1,
+        USER_PROFILE_SVC_PORT: this.getOneCXStartedService('user-profile-svc')?.getMappedPort(8080) ?? -1,
+        IAM_KC_SVC_PORT: this.getOneCXStartedService('iam-kc-svc')?.getMappedPort(8080) ?? -1,
+        TENANT_SVC_PORT: this.getOneCXStartedService('tenant-svc')?.getMappedPort(8080) ?? -1,
+        WORKSPACE_SVC_PORT: this.getOneCXStartedService('workspace-svc')?.getMappedPort(8080) ?? -1
+      },
+      path.resolve('e2e-tests/import-onecx.sh')
+    )
   }
 }

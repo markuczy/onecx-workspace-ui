@@ -2,40 +2,30 @@ import { AbstractStartedContainer, GenericContainer, StartedNetwork, StartedTest
 import { HealthCheck } from 'testcontainers/build/types'
 import { ContainerEnv } from '../model/container-env'
 
-/**
- * Defined or started container interface
- */
-export interface IOneCXContainer {
-  getOneCXName(): string
-  getOneCXAlias(): string
-  getOneCXExposedPort(): number | undefined
-  getOneCXNetwork(): StartedNetwork
-}
-
 // TODO: Configure log consumer
 /**
  * Defined OneCX container
  */
-export class OneCXContainer extends GenericContainer implements IOneCXContainer {
+export abstract class OneCXContainer extends GenericContainer {
   private onecxEnv: ContainerEnv | undefined
   private onecxHealthCheck: HealthCheck | undefined
   private onecxExposedPort: number | undefined
 
   constructor(
     image: string,
-    private name: string,
-    private alias: string,
+    private onecxName: string,
+    private onecxAlias: string,
     private readonly network: StartedNetwork
   ) {
     super(image)
   }
 
   public withOneCXName(name: string) {
-    this.name = name
+    this.onecxName = name
   }
 
   public withOneCXAlias(alias: string) {
-    this.alias = alias
+    this.onecxAlias = alias
   }
 
   public withOneCXEnvironment(env: ContainerEnv) {
@@ -54,11 +44,11 @@ export class OneCXContainer extends GenericContainer implements IOneCXContainer 
   }
 
   public getOneCXName() {
-    return this.name
+    return this.onecxName
   }
 
   public getOneCXAlias() {
-    return this.alias
+    return this.onecxAlias
   }
 
   public getOneCXEnvironment() {
@@ -80,9 +70,9 @@ export class OneCXContainer extends GenericContainer implements IOneCXContainer 
   public override async start(): Promise<StartedOneCXContainer> {
     this.log('Starting container')
 
-    this.name &&
-      this.withName(this.name)
-        .withNetworkAliases(this.alias)
+    this.onecxName &&
+      this.withName(this.onecxName)
+        .withNetworkAliases(this.onecxAlias)
         .withEnvironment(this.onecxEnv ?? {})
 
     this.onecxHealthCheck && this.withHealthCheck(this.onecxHealthCheck).withWaitStrategy(Wait.forHealthCheck())
@@ -90,27 +80,33 @@ export class OneCXContainer extends GenericContainer implements IOneCXContainer 
     this.onecxExposedPort && this.withExposedPorts(this.onecxExposedPort)
 
     this.withNetwork(this.network).withLogConsumer((stream) => {
-      stream.on('data', (line) => console.log(`${this.name}: `, line))
-      stream.on('err', (line) => console.error(`${this.name}: `, line))
-      stream.on('end', () => console.log(`${this.name}: Stream closed`))
+      stream.on('data', (line) => console.log(`${this.onecxName}: `, line))
+      stream.on('err', (line) => console.error(`${this.onecxName}: `, line))
+      stream.on('end', () => console.log(`${this.onecxName}: Stream closed`))
     })
 
-    return new StartedOneCXContainer(await super.start(), this.name, this.alias, this.network, this.onecxExposedPort)
+    return new StartedOneCXContainer(
+      await super.start(),
+      this.onecxName,
+      this.onecxAlias,
+      this.network,
+      this.onecxExposedPort
+    )
   }
 
   protected log(message: string) {
-    console.log(`${this.name ?? this.imageName}: ${message}`)
+    console.log(`${this.onecxName ?? this.imageName}: ${message}`)
   }
 
   protected error(message: string) {
-    console.error(`${this.name ?? this.imageName}: ${message}`)
+    console.error(`${this.onecxName ?? this.imageName}: ${message}`)
   }
 }
 
 /**
  * Started OneCX container
  */
-export class StartedOneCXContainer extends AbstractStartedContainer implements IOneCXContainer {
+export class StartedOneCXContainer extends AbstractStartedContainer {
   constructor(
     startedTestContainer: StartedTestContainer,
     private readonly onecxName: string,

@@ -1,5 +1,5 @@
 import { StartedNetwork, StartedTestContainer } from 'testcontainers'
-import { IOneCXContainer, OneCXContainer, StartedOneCXContainer } from './onecx-container'
+import { OneCXContainer, StartedOneCXContainer } from './onecx-container'
 import { OneCXAppType } from '../model/onecx-app-type'
 import { OneCXCoreApplication } from '../model/onecx-application-type'
 
@@ -13,18 +13,9 @@ export interface OneCXAppDetails {
 }
 
 /**
- * Defined or started OneCX App container interface
- */
-export interface IOneCXAppContainer extends IOneCXContainer {
-  getOneCXAppType(): OneCXAppType
-  getOneCXApplicationName(): OneCXCoreApplication | string
-  getOneCXAppId(): string
-}
-
-/**
  * Defined OneCX App container
  */
-export class OneCXAppContainer extends OneCXContainer implements IOneCXAppContainer {
+export class OneCXAppContainer extends OneCXContainer {
   private onecxAppDetails: OneCXAppDetails
   constructor(image: string, name: string, alias: string, appDetails: OneCXAppDetails, network: StartedNetwork) {
     super(image, name, alias, network)
@@ -59,14 +50,14 @@ export class OneCXAppContainer extends OneCXContainer implements IOneCXAppContai
 /**
  * Started OneCX App container
  */
-export class StartedOneCXAppContainer extends StartedOneCXContainer implements IOneCXAppContainer {
+export class StartedOneCXAppContainer extends StartedOneCXContainer {
   constructor(
     startedTestContainer: StartedTestContainer,
     private readonly onecxAppDetails: OneCXAppDetails,
     onecxName: string,
     onecxAlias: string,
     onecxNetwork: StartedNetwork,
-    onecxExposedPort: number | undefined
+    onecxExposedPort?: number
   ) {
     super(startedTestContainer, onecxAlias, onecxName, onecxNetwork, onecxExposedPort)
   }

@@ -1,9 +1,9 @@
 import { StartedNetwork } from 'testcontainers'
-import { IOneCXAppContainer, OneCXAppContainer, StartedOneCXAppContainer } from './onecx-app'
+import { OneCXAppContainer, StartedOneCXAppContainer } from './onecx-app'
 import { commonEnv, svcEnv } from '../constants/e2e-config'
 import { OneCXCoreApplication } from '../model/onecx-application-type'
-import { IOneCXKeycloakContainer } from '../core/onecx-keycloak'
-import { IOneCXContainer } from './onecx-container'
+import { OneCXContainer, StartedOneCXContainer } from './onecx-container'
+import { OneCXKeycloakContainer, StartedOneCXKeycloakContainer } from '../core/onecx-keycloak'
 
 /**
  * Details of the OneCX Svc App describing its relation with an Application
@@ -20,24 +20,16 @@ export interface OneCXSvcContainerDetails {
  */
 export interface OneCXSvcContainerServices {
   network: StartedNetwork
-  databaseContainer: IOneCXContainer
-  keycloakContainer: IOneCXKeycloakContainer
-}
-
-/**
- * Defined or started OneCX Svc App container interface
- */
-export interface IOneCXSvcContainer extends IOneCXAppContainer {
-  getOneCXKeycloakContainer(): IOneCXKeycloakContainer
-  getOneCXDatabaseContainer(): IOneCXContainer
+  databaseContainer: OneCXContainer | StartedOneCXContainer
+  keycloakContainer: OneCXKeycloakContainer | StartedOneCXKeycloakContainer
 }
 
 /**
  * Defined OneCX Svc App container
  */
 export class OneCXSvcContainer extends OneCXAppContainer {
-  private keycloakContainer: IOneCXKeycloakContainer
-  private databaseContainer: IOneCXContainer
+  private keycloakContainer: OneCXKeycloakContainer | StartedOneCXKeycloakContainer
+  private databaseContainer: OneCXContainer | StartedOneCXContainer
 
   constructor(image: string, details: OneCXSvcContainerDetails, services: OneCXSvcContainerServices) {
     super(

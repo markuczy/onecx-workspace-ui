@@ -2,7 +2,7 @@ import { StartedNetwork } from 'testcontainers'
 import { OneCXPostgresContainer } from './onecx-postgres'
 import { OneCXKeycloakContainer } from './onecx-keycloak'
 import { OneCXSvcContainer } from '../abstract/onecx-svc'
-import { OneCXAppSet } from '../abstract/onecx-app-set'
+import { OneCXAppSet } from './onecx-app-set'
 import { OneCXBffContainer } from '../abstract/onecx-bff'
 import { OneCXUiContainer } from '../abstract/onecx-ui'
 import { containerImagesEnv } from '../constants/e2e-config'
@@ -17,8 +17,8 @@ import { OneCXProductStoreSvcContainer } from '../apps/onecx-product-store-svc'
 import { OneCXUserProfileSvcContainer } from '../apps/onecx-user-profile-svc'
 import { OneCXIamKcSvcContainer } from '../apps/onecx-iam-kc-svc'
 import { OneCXWorkspaceSvcContainer } from '../apps/onecx-workspace-svc'
-import { OneCXShellBffContainer } from './onecx-shell-bff'
-import { OneCXShellUiContainer } from './onecx-shell-ui'
+import { OneCXShellBffContainer } from '../apps/onecx-shell-bff'
+import { OneCXShellUiContainer } from '../apps/onecx-shell-ui'
 import { OneCXThemeBffContainer } from '../apps/onecx-theme-bff'
 import { OneCXTenantBffContainer } from '../apps/onecx-tenant-bff'
 import { OneCXPermissionBffContainer } from '../apps/onecx-permission-bff'
@@ -43,12 +43,15 @@ export interface OneCXSetup {
   bffs: OneCXAppSet<OneCXBffContainer>
   uis: OneCXAppSet<OneCXUiContainer>
   coreApps: OneCXAppSet<OneCXAppContainer>
+  containers: Array<OneCXContainer>
 
   withApp(type: OneCXAppType, container: OneCXAppContainer): void
+  withContainer(container: OneCXContainer): void
 }
 
 export interface OneCXBaseSetupParams {
   namePrefix?: string
+  aggregateContainers?: boolean
 }
 
 export class OneCXBaseSetup implements OneCXSetup {
@@ -59,12 +62,15 @@ export class OneCXBaseSetup implements OneCXSetup {
   bffs: OneCXAppSet<OneCXBffContainer> = new OneCXAppSet()
   uis: OneCXAppSet<OneCXUiContainer> = new OneCXAppSet()
   coreApps: OneCXAppSet<OneCXAppContainer> = new OneCXAppSet()
+  containers: Array<OneCXContainer> = []
 
   protected namePrefix: string | undefined
+  protected aggregateContainers = false
 
   constructor(network: StartedNetwork, params?: OneCXBaseSetupParams) {
     this.network = network
     this.namePrefix = params?.namePrefix
+    this.aggregateContainers = params?.aggregateContainers ?? this.aggregateContainers
 
     this.database = this.setupDatabase(this.network)
     this.keycloak = this.setupKeycloak(this.network, this.database)
@@ -83,6 +89,10 @@ export class OneCXBaseSetup implements OneCXSetup {
         this.addApp<OneCXUiContainer>(this.uis, container as OneCXUiContainer)
         break
     }
+  }
+
+  public withContainer(container: OneCXContainer): void {
+    this.addContainer(container)
   }
 
   private setupBaseApps(
@@ -228,9 +238,17 @@ export class OneCXBaseSetup implements OneCXSetup {
     return this.addApp<OneCXUiContainer>(this.uis, shellUi)
   }
 
+  protected addContainer(container: OneCXContainer) {
+    const prefixedContainer = this.prefixedContainer(container)
+    this.containers.push(prefixedContainer)
+
+    return prefixedContainer
+  }
+
   protected addApp<T extends OneCXAppContainer>(set: OneCXAppSet<T>, container: T) {
     const prefixedContainer = this.prefixedContainer(container)
     set.replace(prefixedContainer)
+    this.aggregateContainers && this.containers.push(prefixedContainer)
 
     return prefixedContainer
   }

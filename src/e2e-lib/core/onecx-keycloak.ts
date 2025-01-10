@@ -1,7 +1,6 @@
 import { StartedNetwork, StartedTestContainer } from 'testcontainers'
 import { commonEnv } from '../constants/e2e-config'
-import { IOneCXContainer, OneCXContainer, StartedOneCXContainer } from '../abstract/onecx-container'
-import { StartedOneCXPostgresContainer } from './onecx-postgres'
+import { OneCXContainer, StartedOneCXContainer } from '../abstract/onecx-container'
 
 export interface OneCXKeycloakDetails {
   onecxRealm: string
@@ -10,14 +9,7 @@ export interface OneCXKeycloakDetails {
   adminPassword: string
 }
 
-export interface IOneCXKeycloakContainer extends IOneCXContainer {
-  getOneCXRealm(): string
-  getOneCXAdminRealm(): string
-  getOneCXAdminUsername(): string
-  getOneCXAdminPassword(): string
-}
-
-export class OneCXKeycloakContainer extends OneCXContainer implements IOneCXKeycloakContainer {
+export class OneCXKeycloakContainer extends OneCXContainer {
   private onecxStartCommand: string[] = ['start-dev', '--import-realm']
   private onecxKeycloakDetails: OneCXKeycloakDetails = {
     onecxRealm: commonEnv.KC_REALM,
@@ -30,7 +22,7 @@ export class OneCXKeycloakContainer extends OneCXContainer implements IOneCXKeyc
   constructor(
     image: string,
     network: StartedNetwork,
-    private readonly databaseContainer: IOneCXContainer,
+    private readonly databaseContainer: OneCXContainer | StartedOneCXContainer,
     private readonly initDataPath?: string
   ) {
     const name = 'keycloak-app'
@@ -188,7 +180,7 @@ export class OneCXKeycloakContainer extends OneCXContainer implements IOneCXKeyc
   }
 }
 
-export class StartedOneCXKeycloakContainer extends StartedOneCXContainer implements IOneCXKeycloakContainer {
+export class StartedOneCXKeycloakContainer extends StartedOneCXContainer {
   constructor(
     startedTestContainer: StartedTestContainer,
     name: string,

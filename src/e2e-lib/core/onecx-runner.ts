@@ -16,6 +16,7 @@ export interface OneCXRunnerStartParams {
 
 export interface OneCXRunner {
   start(setup: OneCXSetup, params: OneCXRunnerStartParams): Promise<StartedOneCXEnvironment>
+  teardown(startedOneCXEnv: StartedOneCXEnvironment): Promise<void>
 }
 
 export class OneCXBaseRunner implements OneCXRunner {
@@ -37,6 +38,7 @@ export class OneCXBaseRunner implements OneCXRunner {
   private startCore = true
 
   public async start(setup: OneCXSetup, params: OneCXRunnerStartParams): Promise<StartedOneCXEnvironment> {
+    this.log('Starting environment')
     this.checkDatabases = params.checkDatabases ?? this.checkDatabases
     this.checkDatabaseFunc = params.checkDatabaseFunc ?? this.checkDatabaseFunc
     this.order = params.order ?? this.order
@@ -44,7 +46,37 @@ export class OneCXBaseRunner implements OneCXRunner {
     this.apps = [...setup.services.values(), ...setup.bffs.values(), ...setup.uis.values()]
     this.startCore = params.startCore ?? this.startCore
 
-    return this.startAll(setup)
+    return await this.startAll(setup).finally(() => this.log('Started environment'))
+  }
+
+  public async teardown(startedOneCXEnv: StartedOneCXEnvironment) {
+    this.log('Starting teardown')
+
+    const database = startedOneCXEnv.getOneCXStartedDatabase()
+    database && (await database.stop().then(() => this.log(`${database.getOneCXAlias()} stopped`)))
+
+    const keycloak = startedOneCXEnv.getOneCXStartedKeycloak()
+    keycloak && (await keycloak.stop().then(() => this.log(`${keycloak.getOneCXAlias()} stopped`)))
+
+    const apps = [
+      ...startedOneCXEnv.getOneCXStartedServices(),
+      ...startedOneCXEnv.getOneCXStartedBffs(),
+      ...startedOneCXEnv.getOneCXStartedUis()
+    ]
+
+    for (const batch of this.order.reverse()) {
+      const promises = batch.flatMap((application) => {
+        return this.stopApplication(apps, application)
+      })
+      await Promise.all(promises)
+    }
+
+    await Promise.all(apps.map((app) => app.stop())).then(() => this.log('All apps stopped'))
+
+    const network = startedOneCXEnv.getOneCXNetwork()
+    network && (await network.stop().then(() => this.log(`Network stopped`)))
+
+    this.log('Finished teardown')
   }
 
   private async startAll(setup: OneCXSetup) {
@@ -83,6 +115,7 @@ export class OneCXBaseRunner implements OneCXRunner {
     }
 
     return new StartedOneCXEnvironment(
+      this,
       setup.network,
       database,
       keycloak,
@@ -97,6 +130,15 @@ export class OneCXBaseRunner implements OneCXRunner {
     return appsToStart.map((app) =>
       app.start().catch((error) => {
         throw new ContainerStartError(`Could not start ${app.getOneCXAlias()}`, error)
+      })
+    )
+  }
+
+  private stopApplication(apps: Array<StartedOneCXAppContainer>, applicationName: string) {
+    const appsToStop = apps.filter((app) => app.getOneCXApplicationName() === applicationName)
+    return appsToStop.map((app) =>
+      app.stop().catch((error) => {
+        throw new ContainerStartError(`Could not stop ${app.getOneCXAlias()}`, error)
       })
     )
   }
@@ -138,8 +180,6 @@ export class OneCXBaseRunner implements OneCXRunner {
 
     return keycloak
   }
-
-  private async teardown() {}
 
   private async defaultCheckDatabaseFunc(dbName: string, databaseContainer: StartedOneCXPostgresContainer) {
     return await databaseContainer.doesDatabaseExist(dbName, dbName)

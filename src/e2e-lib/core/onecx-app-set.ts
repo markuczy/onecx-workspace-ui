@@ -1,4 +1,4 @@
-import { OneCXAppContainer, StartedOneCXAppContainer } from './onecx-app'
+import { OneCXAppContainer, StartedOneCXAppContainer } from '../abstract/onecx-app'
 
 export class OneCXAppSet<T extends OneCXAppContainer | StartedOneCXAppContainer> {
   private appList: Array<T>

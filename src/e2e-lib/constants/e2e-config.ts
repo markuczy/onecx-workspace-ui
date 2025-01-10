@@ -1,5 +1,6 @@
 export const baseOneCXRepo = 'ghcr.io/onecx'
 
+// TODO: Use default values or env variables (provided via pipeline)
 export const containerImagesEnv = {
   POSTGRES: 'docker.io/library/postgres:13.4',
   KEYCLOAK: 'quay.io/keycloak/keycloak:23.0.4',
