@@ -33,6 +33,7 @@ connect.lock
 typings
 *.log
 *.sh
+!e2e-tests/**/*.sh
 
 # System Files
 .DS_Store

@@ -10,6 +10,7 @@
     "openapiYaml": "src/assets/api/openapi-bff.yaml",
     "openapiOutput": "src/app/shared/generated"
   },
+  "type": "module",
   "scripts": {
     "build": "ng build",
     "check": "ng lint --cache=true && npx prettier -c --cache .",
@@ -27,7 +28,9 @@
     "apigen-cleanup": "rm -rf $npm_package_config_openapiOutput",
     "apigen-format": "npx prettier $npm_package_config_openapiYaml --write && npx prettier $npm_package_config_openapiOutput/**/* --write",
     "apigen-generate": "openapi-generator-cli generate -i $npm_package_config_openapiYaml -g typescript-angular -c apigen.yaml -o $npm_package_config_openapiOutput --type-mappings=AnyType=object,set=Array",
-    "apigen": "npm run apigen-cleanup && npm run apigen-generate && npm run apigen-format"
+    "apigen": "npm run apigen-cleanup && npm run apigen-generate && npm run apigen-format",
+    "run-cy": "npx cypress run",
+    "e2e-tests": "tsx src/e2e-tests.ts"
   },
   "husky": {
     "hooks": {
@@ -46,6 +49,7 @@
     "@angular/platform-browser": "^18.2.6",
     "@angular/platform-browser-dynamic": "^18.2.6",
     "@angular/router": "^18.2.6",
+    "@cypress/webpack-preprocessor": "^6.0.2",
     "@ngneat/error-tailor": "5.0.1",
     "@ngneat/until-destroy": "^10.0.0",
     "@ngrx/effects": "^18.0.1",
@@ -72,6 +76,7 @@
     "primeicons": "^7.0.0",
     "primeng": "^17.18.11",
     "rxjs": "7.8.1",
+    "ts-loader": "^9.5.1",
     "tslib": "^2.8.0"
   },
   "devDependencies": {
@@ -88,14 +93,18 @@
     "@angular/language-service": "^18.2.6",
     "@commitlint/cli": "^19.5.0",
     "@commitlint/config-conventional": "^19.5.0",
+    "@jscutlery/cypress-harness": "^0.7.17",
     "@openapitools/openapi-generator-cli": "^2.15.3",
     "@schematics/angular": "^18.2.10",
+    "@types/cypress": "^1.1.6",
     "@types/file-saver": "^2.0.7",
     "@types/jasmine": "~5.1.4",
     "@types/node": "~22.9.0",
     "@typescript-eslint/eslint-plugin": "^7.18.0",
     "@typescript-eslint/parser": "^7.18.0",
     "css-loader": "^7.1.2",
+    "cypress": "^13.16.1",
+    "cypress-pipe": "^2.0.0",
     "eslint": "^8.57.1",
     "eslint-config-prettier": "9.1.0",
     "eslint-plugin-deprecation": "^3.0.0",
@@ -120,7 +129,9 @@
     "prettier": "^3.3.3",
     "sonar-scanner": "^3.1.0",
     "sonarqube-scanner": "^4.2.5",
+    "testcontainers": "^10.16.0",
     "ts-node": "10.9.2",
+    "tsx": "^4.19.2",
     "typescript": "5.5.4",
     "url-loader": "^4.1.1",
     "webpack": "5.95.0",

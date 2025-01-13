@@ -1,0 +1,35 @@
+name: Prepare and run e2e tests
+
+on:
+  workflow_call:
+    inputs:
+      node:
+        description: 'Node version'
+        default: '20'
+        required: false
+        type: string  
+
+# TODO: Shell version
+# TODO: Apps to run and their versions
+# TODO: Run tests in order of definition in the input list
+# TODO: Use product's target run-e2e-tests to run the tests
+# - for this it could be usefull to use an artifact from the build
+# - also install cypress package in products
+
+jobs:
+  prepare-and-run:
+    name: Prepare and run e2e tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout to workspace repository
+        uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ inputs.node }}
+          cache: 'npm'
+      - name: Install npm deps
+        run: npm install
+      - name: Setup env and run tests
+        run: npm run e2e-tests
+ 
