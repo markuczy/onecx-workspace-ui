@@ -129,5 +129,10 @@
     "url-loader": "^4.1.1",
     "webpack": "5.95.0",
     "webpack-merge": "^6.0.1"
+  },
+  "overrides": {
+    "@onecx/integration-tests": {
+      "@nx/devkit": "^19.8.0"
+    }
   }
 }
