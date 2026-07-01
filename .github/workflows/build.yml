@@ -14,3 +14,19 @@ jobs:
     secrets: inherit
     with:
       helmEventTargetRepository: onecx/onecx-workspace
+
+  build-e2e-image:
+    name: Build & Push E2E Test Image
+    needs: build
+    permissions:
+      contents: read
+      packages: write
+    uses: onecx/ci-common/.github/workflows/docker-build.yml@v1
+    secrets: inherit
+    with: 
+      buildx: true
+      platform: 'linux/amd64,linux/arm64'
+      tags: '{{ .Version }},{{ .Branch }}'
+      push: true
+      samoDockerFile: integration-tests/e2e-tests/playwright/workspace.Dockerfile
+    

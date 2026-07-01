@@ -6,7 +6,7 @@
     "heartbeat": { "enabled": true },
     "container": {
       "e2e": {
-        "image": "onecx-workspace-e2e:latest",
+        "image": "ghcr.io/onecx/onecx-workspace-e2e:latest",
         "networkAlias": "onecx-workspace-e2e",
         "baseUrl": "http://onecx-shell-ui:8080/onecx-shell/admin/workspace"
       }
