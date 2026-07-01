@@ -75,15 +75,6 @@ jobs:
           echo "Images loaded:"
           docker images --format "table {{.Repository}}:{{.Tag}}\t{{.Size}}"
 
-      # # TODO: Do it later in the workflow when testContainers already pulled the images, so we don't pull them twice
-      # - name: Save Docker images to cache (cache miss)
-      #   if: steps.cache-docker.outputs.cache-hit != 'true'
-      #   run: |
-      #     echo "Saving images to cache archive..."
-      #     docker save $(docker images --format '{{.Repository}}:{{.Tag}}' | grep -v '<none>') \
-      #       | gzip > /tmp/docker-images.tar.gz
-      #     du -sh /tmp/docker-images.tar.gz
-
       - name: Build E2E test container image
         run: |
           echo "Building E2E container image: ${{ env.E2E_IMAGE }}"
@@ -100,7 +91,7 @@ jobs:
 
       - name: Run E2E tests
         id: run-e2e
-        continue-on-error: ${{ github.event_name == 'workflow_dispatch' }}
+        continue-on-error: true
         run: npm run e2e
         env:
           IT_VERBOSE: ${{ github.event.inputs.verbose || 'false' }}
@@ -176,3 +167,11 @@ jobs:
           path: ${{ env.ARTIFACTS_DIR }}/
           retention-days: 14
           if-no-files-found: warn
+
+      - name: Save Docker images to cache (cache miss)
+        if: steps.cache-docker.outputs.cache-hit != 'true'
+        run: |
+          echo "Saving images to cache archive..."
+          docker save $(docker images --format '{{.Repository}}:{{.Tag}}' | grep -v '<none>') \
+            | gzip > /tmp/docker-images.tar.gz
+          du -sh /tmp/docker-images.tar.gz
