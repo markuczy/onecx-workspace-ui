@@ -3,24 +3,8 @@ on:
   workflow_dispatch:
 
 jobs:
-  store-artifact:
-    name: Store e2e test artifact
-    runs-on: ubuntu-latest
-    steps:
-        - name: Checkout repository
-          uses: actions/checkout@v4
-    
-        - uses: actions/upload-artifact@v7
-          with:
-            name: e2e-test-artifact
-            path: |
-                    integration-tests/e2e-tests/playwright
-            retention-days: 1
-            if-no-files-found: error
-
   build-e2e-image:
     name: Build & Push E2E Test Image
-    needs: store-artifact    
     permissions:
       contents: read
       packages: write
@@ -32,5 +16,5 @@ jobs:
       tags: '{{ .Version }},{{ .Branch }}'
       push: true
       samoDockerFile: integration-tests/e2e-tests/playwright/workspace.Dockerfile
-      artifact: e2e-test-artifact
+      artifact: ''
     
